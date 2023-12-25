@@ -22,9 +22,9 @@
 #include <time.h>
 #include <string.h>
 
-#include "../destor.h"
-#include "../jcr.h"
-#include "../backup.h"
+#include "destor.h"
+#include "jcr.h"
+#include "backup.h"
 
 /* Use this macros if libhashfile library is installed on your system */
 // #include <libhashfile.h>

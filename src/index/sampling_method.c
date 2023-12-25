@@ -1,4 +1,4 @@
-#include "../destor.h"
+#include "destor.h"
 #include "index.h"
 
 /*

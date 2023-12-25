@@ -1,7 +1,7 @@
 #ifndef INDEX_BUFFER_H_
 #define INDEX_BUFFER_H_
 
-#include "../destor.h"
+#include "destor.h"
 /*
  * The basic unit in index buffer.
  */

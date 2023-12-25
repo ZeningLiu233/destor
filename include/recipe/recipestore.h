@@ -8,7 +8,7 @@
 #ifndef RECIPESTORE_H_
 #define RECIPESTORE_H_
 
-#include "../destor.h"
+#include "destor.h"
 
 /*
  * A backup version

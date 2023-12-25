@@ -3,7 +3,7 @@
  * See his INFOCOM paper for more details.
  */
 
-#include "../destor.h"
+#include "destor.h"
 
 #define my_memcmp(x, y) \
      ({ \

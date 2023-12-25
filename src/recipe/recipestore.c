@@ -6,7 +6,7 @@
  */
 
 #include "recipestore.h"
-#include "../jcr.h"
+#include "jcr.h"
 
 static int32_t backup_version_count;
 static sds recipepath;

@@ -1,4 +1,4 @@
-#include "../destor.h"
+#include "destor.h"
 /*
  * c == NULL indicates the end and return the segment.
  * If a segment boundary is found, return the segment;

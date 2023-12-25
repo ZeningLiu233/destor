@@ -5,7 +5,7 @@
  *      Author: fumin
  */
 
-#include "../destor.h"
+#include "destor.h"
 #include "index.h"
 
 typedef char* kvpair;

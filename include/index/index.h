@@ -9,7 +9,7 @@
 #ifndef INDEX_H_
 #define INDEX_H_
 
-#include "../destor.h"
+#include "destor.h"
 
 /*
  * The function is used to initialize memory structures of a fingerprint index.

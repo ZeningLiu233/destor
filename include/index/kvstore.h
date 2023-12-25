@@ -1,7 +1,7 @@
 #ifndef KVSTORE_H_
 #define KVSTORE_H_
 
-#include "../destor.h"
+#include "destor.h"
 
 void init_kvstore();
 

@@ -1,4 +1,4 @@
-#include "../destor.h"
+#include "destor.h"
 
 #define MSB64 0x8000000000000000LL
 #define MAXBUF (128*1024)

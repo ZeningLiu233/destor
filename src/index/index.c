@@ -2,9 +2,9 @@
 #include "kvstore.h"
 #include "fingerprint_cache.h"
 #include "index_buffer.h"
-#include "../storage/containerstore.h"
-#include "../recipe/recipestore.h"
-#include "../jcr.h"
+#include "storage/containerstore.h"
+#include "recipe/recipestore.h"
+#include "jcr.h"
 
 struct index_overhead index_overhead;
 

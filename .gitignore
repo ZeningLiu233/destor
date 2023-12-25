@@ -1,8 +1,5 @@
-*.o
-*.out
-*.files
-*.a
-Makefile
-.deps
-tags
-destor
+build/*
+data/*
+working/*
+backup.log
+destor.config

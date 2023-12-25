@@ -1,7 +1,7 @@
 #include "containerstore.h"
-#include "../utils/serial.h"
-#include "../utils/sync_queue.h"
-#include "../jcr.h"
+#include "utils/serial.h"
+#include "utils/sync_queue.h"
+#include "jcr.h"
 
 static int64_t container_count = 0;
 static FILE* fp;

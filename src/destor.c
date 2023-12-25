@@ -35,10 +35,10 @@ struct option long_options[] = {
 void usage() {
 	puts("GENERAL USAGE");
 	puts("\tstart a backup job");
-	puts("\t\tdestor /path/to/data -p\"a line in config file\"");
+	puts("\t\tdestor /path/to/data -p \"a line in config file\"");
 
 	puts("\tstart a restore job");
-	puts("\t\tdestor -r<JOB_ID> /path/to/restore -p\"a line in config file\"");
+	puts("\t\tdestor -r<JOB_ID> /path/to/restore -p \"a line in config file\"");
 
 	puts("\tprint state of destor");
 	puts("\t\tdestor -s");
@@ -50,7 +50,7 @@ void usage() {
 	puts("\t\tdestor -t /path/to/data");
 
 	puts("\tParameter");
-	puts("\t\t-p\"a line in config file\"");
+	puts("\t\t-p \"a line in config file\"");
 	exit(0);
 }
 
