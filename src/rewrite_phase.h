@@ -16,12 +16,12 @@ struct containerRecord {
 	int32_t out_of_order;
 };
 
-struct {
+struct rewrite_buffer {
 	GQueue *chunk_queue;
 	GSequence *container_record_seq; //
 	int num;
 	int size;
-} rewrite_buffer;
+} extern rewrite_buffer;
 
 void* cfl_rewrite(void* arg);
 void* cbr_rewrite(void* arg);

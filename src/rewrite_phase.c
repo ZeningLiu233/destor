@@ -9,6 +9,8 @@
 
 static pthread_t rewrite_t;
 
+struct rewrite_buffer rewrite_buffer;
+
 /* Descending order */
 gint g_record_descmp_by_length(struct containerRecord* a,
 		struct containerRecord* b, gpointer user_data) {
