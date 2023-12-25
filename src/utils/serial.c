@@ -11,7 +11,7 @@
 
 */
 /*  serial_int16  --  Serialise a signed 16 bit integer.  */
-#include "serial.h"
+#include "utils/serial.h"
 #include <string.h>
 #include <arpa/inet.h>
 

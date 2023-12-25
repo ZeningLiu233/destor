@@ -6,6 +6,10 @@
 #define FINGERPRINT_PT  0xbfe6b8a5bf378d83LL
 #define BREAKMARK_VALUE 0x78
 
+uint32_t g_min_rabin_chunk_size;
+uint32_t g_max_rabin_chunk_size;
+uint32_t g_expect_rabin_chunk_size;
+
 #define SLIDE(m,fp,bufPos,buf) do{	\
 	    unsigned char om;   \
 	    u_int64_t x;	 \
@@ -275,6 +279,12 @@ int rabin_chunk_data(unsigned char *p, int n) {
 	return i;
 }
 
+int normalized_rabin_init(int expect_chunk_size){
+    g_expect_rabin_chunk_size = 8192;
+    g_min_rabin_chunk_size = 6144;
+    g_max_rabin_chunk_size = 65536;
+}
+
 /*
  * A variant of rabin chunking.
  * We use a larger avg chunk size when the current size is small,
@@ -282,41 +292,56 @@ int rabin_chunk_data(unsigned char *p, int n) {
  * */
 int normalized_rabin_chunk_data(unsigned char *p, int n) {
 
-	UINT64 f_break = 0;
-	UINT64 count = 0;
-	UINT64 fp = 0;
-	int i = 1, bufPos = -1;
+    UINT32 rabin_chunk_sizeA = g_expect_rabin_chunk_size*4-1;
+    UINT32 rabin_chunk_sizeB = g_expect_rabin_chunk_size/4-1;
+    UINT64 f_break = 0;
+    UINT64 count=0;
+    UINT64 fingerprint=0,w_digest;
+    int bufPos=-1,stati=0,minflag=0;
 
-	unsigned char om;
+    unsigned char om;   \
 	u_int64_t x;
 
-	unsigned char buf[128];
-	memset((char*) buf, 0, 128);
+    unsigned char  buf[128];
+    memset ((char*) buf,0, 128);
 
-	if (n <= destor.chunk_min_size)
-		return n;
-	else
-		i = destor.chunk_min_size;
 
-	int small_mask = destor.chunk_avg_size*2 - 1;
-	int large_mask = destor.chunk_avg_size/2 - 1;
-	int end = n > destor.chunk_max_size ? destor.chunk_max_size : n;
-	while (i < end) {
+    int i=g_min_rabin_chunk_size, Mid=g_min_rabin_chunk_size + 4*1024;
+    //return n;
 
-		SLIDE(p[i - 1], fp, bufPos, buf);
+    if(n<=g_min_rabin_chunk_size) //the minimal  subChunk Size.
+        return n;
+    //windows_reset();
+    if(n > g_max_rabin_chunk_size)
+        n = g_max_rabin_chunk_size;
+    else if(n<Mid)
+        Mid = n;
 
-		if (i < destor.chunk_avg_size) {
-			if ((fp & small_mask) == BREAKMARK_VALUE)
-				break;
-			i++;
-		} else {
-			if ((fp & large_mask) == BREAKMARK_VALUE)
-				break;
-			i++;
-		}
+    windows_reset();
 
-	}
-	return i;
+    for(int j=48;j>=2;j--){
+        SLIDE(p[i-j],fingerprint,bufPos,buf);
+    }
+
+    while(i<Mid)
+    {
+        SLIDE(p[i-1],fingerprint,bufPos,buf);
+        if ((fingerprint & rabin_chunk_sizeA) == BREAKMARK_VALUE) { //AVERAGE*2, *4, *8
+            return i;
+        }
+        i++;
+    }
+    while(i<n)
+    {
+        SLIDE(p[i-1],fingerprint,bufPos,buf);
+        if ((fingerprint & rabin_chunk_sizeB) == BREAKMARK_VALUE){ //Average/2, /4, /8
+            return i;
+        }
+        i++;
+    }
+
+
+    return i;
 }
 
 /*

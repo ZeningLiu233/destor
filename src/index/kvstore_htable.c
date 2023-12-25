@@ -6,7 +6,7 @@
  */
 
 #include "destor.h"
-#include "index.h"
+#include "index/index.h"
 
 typedef char* kvpair;
 

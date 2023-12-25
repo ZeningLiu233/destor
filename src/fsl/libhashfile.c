@@ -30,7 +30,7 @@
 #include <assert.h>
 #include <time.h>
 
-#include "libhashfile.h"
+#include "fsl/libhashfile.h"
 
 #define max2(a, b)	((a) > (b) ? (a) : (b))
 #define max(a, b, c)	(max2(max2(a, b), c))

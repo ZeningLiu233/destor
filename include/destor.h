@@ -26,7 +26,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include <openssl/sha.h>
 #include <glib.h>
 #include <getopt.h>
 
@@ -68,6 +67,7 @@
 #define CHUNK_FILE 3 /* approximate file-level */
 #define CHUNK_AE 4 /* Asymmetric Extremum CDC */
 #define CHUNK_TTTD 5
+#define CHUNK_FASTCDC 6
 
 /*
  * A global fingerprint index is required.

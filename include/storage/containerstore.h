@@ -8,7 +8,7 @@
 #ifndef CONTAINERSTORE_H_
 #define CONTAINERSTORE_H_
 
-#include "destor.h"
+#include "../destor.h"
 
 #define CONTAINER_SIZE (4194304ll) //4MB
 #define CONTAINER_META_SIZE (32768ll) //32KB
@@ -36,6 +36,9 @@ struct container* create_container();
 
 void write_container(struct container*);
 void write_container_async(struct container*);
+
+void container_store_sync();
+
 struct container* retrieve_container_by_id(containerid);
 struct containerMeta* retrieve_container_meta_by_id(containerid);
 struct containerMeta* retrieve_container_meta_by_id_async(containerid);

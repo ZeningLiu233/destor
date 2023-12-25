@@ -1,4 +1,4 @@
-#include "kvstore.h"
+#include "index/kvstore.h"
 
 extern void init_kvstore_htable();
 extern void close_kvstore_htable();

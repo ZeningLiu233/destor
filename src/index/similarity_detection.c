@@ -4,9 +4,9 @@
  *  Created on: Mar 25, 2014
  *      Author: fumin
  */
-#include "index_buffer.h"
-#include "kvstore.h"
-#include "fingerprint_cache.h"
+#include "index/index_buffer.h"
+#include "index/kvstore.h"
+#include "index/fingerprint_cache.h"
 #include "recipe/recipestore.h"
 #include "storage/containerstore.h"
 #include "jcr.h"

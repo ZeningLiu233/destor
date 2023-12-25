@@ -1,4 +1,4 @@
-#include "sync_queue.h"
+#include "utils/sync_queue.h"
 #include <stdio.h>
 
 SyncQueue* sync_queue_new(int size) {

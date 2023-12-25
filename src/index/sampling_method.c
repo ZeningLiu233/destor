@@ -1,5 +1,5 @@
 #include "destor.h"
-#include "index.h"
+#include "index/index.h"
 
 /*
  * Sampling features for a chunk sequence.

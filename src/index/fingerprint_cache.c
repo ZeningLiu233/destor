@@ -5,7 +5,7 @@
  *      Author: fumin
  */
 #include "destor.h"
-#include "index.h"
+#include "index/index.h"
 #include "storage/containerstore.h"
 #include "recipe/recipestore.h"
 #include "utils/lru_cache.h"

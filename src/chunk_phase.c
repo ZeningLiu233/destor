@@ -138,6 +138,7 @@ void start_chunk_phase() {
 		assert(destor.chunk_max_size <= CONTAINER_SIZE - CONTAINER_META_SIZE);
 
 		chunkAlg_init();
+		normalized_rabin_init(destor.chunk_avg_size);
 		chunking = normalized_rabin_chunk_data;
 	}else if(destor.chunk_algorithm == CHUNK_TTTD){
 		int pwr;
@@ -174,6 +175,12 @@ void start_chunk_phase() {
 
 		chunking = ae_chunk_data;
 		ae_init();
+	}else if(destor.chunk_algorithm == CHUNK_FASTCDC){
+		assert(destor.chunk_avg_size <= destor.chunk_max_size);
+		assert(destor.chunk_max_size <= CONTAINER_SIZE - CONTAINER_META_SIZE);
+
+		chunking = fastcdc_chunk_data;
+		fastcdc_init(destor.chunk_avg_size);
 	}else{
 		NOTICE("Invalid chunking algorithm");
 		exit(1);

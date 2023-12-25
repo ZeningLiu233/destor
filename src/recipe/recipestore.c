@@ -5,7 +5,7 @@
  *      Author: fumin
  */
 
-#include "recipestore.h"
+#include "recipe/recipestore.h"
 #include "jcr.h"
 
 static int32_t backup_version_count;

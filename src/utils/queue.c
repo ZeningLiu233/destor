@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "queue.h"
+#include "utils/queue.h"
 
 Queue* queue_new() {
 	Queue *queue = (Queue*) malloc(sizeof(Queue));
