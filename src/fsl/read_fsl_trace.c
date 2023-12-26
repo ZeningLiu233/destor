@@ -26,11 +26,7 @@
 #include "jcr.h"
 #include "backup.h"
 
-/* Use this macros if libhashfile library is installed on your system */
-// #include <libhashfile.h>
-
-/* Use this macros if libhashfile library is NOT installed on your system */
-#include "libhashfile.h"
+#include "fsl/libhashfile.h"
 
 #define MAXLINE	4096
 
