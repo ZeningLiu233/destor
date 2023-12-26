@@ -52,7 +52,8 @@ static void kv_update(kvpair kv, int64_t id){
 	value[0] = id;
 }
 
-static inline void free_kvpair(kvpair kvp){
+static inline void free_kvpair(void* void_kvp){
+	kvpair kvp = void_kvp;
 	free(kvp);
 }
 
@@ -74,20 +75,26 @@ void init_kvstore_htable(){
 	if ((fp = fopen(indexpath, "r"))) {
 		/* The number of features */
 		int key_num;
-		fread(&key_num, sizeof(int), 1, fp);
+		size_t ret;
+		ret = fread(&key_num, sizeof(int), 1, fp);
+		assert(ret == 1);
+
 		for (; key_num > 0; key_num--) {
 			/* Read a feature */
 			kvpair kv = new_kvpair();
-			fread(get_key(kv), destor.index_key_size, 1, fp);
+			ret = fread(get_key(kv), destor.index_key_size, 1, fp);
+		assert(ret == 1);
 
 			/* The number of segments/containers the feature refers to. */
 			int id_num, i;
-			fread(&id_num, sizeof(int), 1, fp);
+			ret = fread(&id_num, sizeof(int), 1, fp);
+			assert(ret == 1);
 			assert(id_num <= destor.index_value_length);
 
 			for (i = 0; i < id_num; i++)
 				/* Read an ID */
-				fread(&get_value(kv)[i], sizeof(int64_t), 1, fp);
+				ret = fread(&get_value(kv)[i], sizeof(int64_t), 1, fp);
+				assert(ret == 1);
 
 			g_hash_table_insert(htable, get_key(kv), kv);
 		}

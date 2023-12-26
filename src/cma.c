@@ -24,7 +24,7 @@ void update_manifest(GHashTable *monitor){
     if((fp = fopen(fname, "r"))){
     	/* file exists. Reconstruct the manifest from the file. */
     	struct record tmp;
-    	while(fscanf(fp, "%lld,%d", &tmp.id, &tmp.time) == 2){
+    	while(fscanf(fp, "%ld,%d", &tmp.id, &tmp.time) == 2){
     		struct record* rec = (struct record*) malloc(sizeof(struct record));
     		rec->id = tmp.id;
     		rec->time = tmp.time;
@@ -57,7 +57,7 @@ void update_manifest(GHashTable *monitor){
     	g_hash_table_iter_init(&iter, manifest);
     	while(g_hash_table_iter_next(&iter, &key, &value)){
     		struct record* r = value;
-    		fprintf(fp, "%lld,%d\n", r->id, r->time);
+    		fprintf(fp, "%ld,%d\n", r->id, r->time);
     	}
 
         NOTICE("CMA: update %d records.", g_hash_table_size(manifest));
@@ -92,7 +92,7 @@ GHashTable* trunc_manifest(int jobid){
     if((fp = fopen(fname, "r"))){
     	/* file exists. Reconstruct the manifest from the file. */
     	struct record tmp;
-    	while(fscanf(fp, "%lld,%d", &tmp.id, &tmp.time) == 2){
+    	while(fscanf(fp, "%ld,%d", &tmp.id, &tmp.time) == 2){
     		struct record* rec = (struct record*) malloc(sizeof(struct record));
     		if(tmp.time <= jobid){
     			/* This record can be removed. */
@@ -123,7 +123,7 @@ GHashTable* trunc_manifest(int jobid){
     	g_hash_table_iter_init(&iter, manifest);
     	while(g_hash_table_iter_next(&iter, &key, &value)){
     		struct record* rec = value;
-    		fprintf(fp, "%lld,%d\n", rec->id, rec->time);
+    		fprintf(fp, "%ld,%d\n", rec->id, rec->time);
     	}
     	fclose(fp);
     }else{

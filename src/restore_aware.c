@@ -19,8 +19,10 @@ struct {
 	struct lruCache *cache;
 } monitor;
 
-static int container_record_check_id(struct containerRecord* a,
-		containerid *id){
+static int container_record_check_id(void* void_a,
+		void *void_id){
+	struct containerRecord* a = void_a;
+	containerid *id = void_id;
 	return a->cid == *id ? 1 : 0;
 }
 

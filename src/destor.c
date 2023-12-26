@@ -13,7 +13,6 @@
 struct destor destor;
 
 extern void do_backup(char *path);
-//extern void do_delete(int revision);
 extern void do_restore(int revision, char *path);
 void do_delete(int jobid);
 extern void make_trace(char *raw_files);
@@ -24,15 +23,15 @@ extern void load_config_from_string(sds config);
 /* : means argument is required.
  * :: means argument is required and no space.
  */
-const char * const short_options = "sr::t::p::h";
+const char *const short_options = "sr::t::p::h";
 
 struct option long_options[] = {
-		{ "state", 0, NULL, 's' },
-		{ "help", 0, NULL, 'h' },
-		{ NULL, 0, NULL, 0 }
-};
+	{"state", 0, NULL, 's'},
+	{"help", 0, NULL, 'h'},
+	{NULL, 0, NULL, 0}};
 
-void usage() {
+void usage()
+{
 	puts("GENERAL USAGE");
 	puts("\tstart a backup job");
 	puts("\t\tdestor /path/to/data -p \"a line in config file\"");
@@ -54,7 +53,8 @@ void usage() {
 	exit(0);
 }
 
-void destor_log(int level, const char *fmt, ...) {
+void destor_log(int level, const char *fmt, ...)
+{
 	va_list ap;
 	char msg[DESTOR_MAX_LOGMSG_LEN];
 
@@ -68,16 +68,17 @@ void destor_log(int level, const char *fmt, ...) {
 	fprintf(stdout, "%s\n", msg);
 }
 
-void check_simulation_level(int last_level, int current_level) {
-	if ((last_level <= SIMULATION_RESTORE && current_level >= SIMULATION_APPEND)
-			|| (last_level >= SIMULATION_APPEND
-					&& current_level <= SIMULATION_RESTORE)) {
+void check_simulation_level(int last_level, int current_level)
+{
+	if ((last_level <= SIMULATION_RESTORE && current_level >= SIMULATION_APPEND) || (last_level >= SIMULATION_APPEND && current_level <= SIMULATION_RESTORE))
+	{
 		fprintf(stderr, "FATAL ERROR: Conflicting simualtion level!\n");
 		exit(1);
 	}
 }
 
-void destor_start() {
+void destor_start()
+{
 
 	/* Init */
 	destor.working_directory = sdsnew("/home/data/working/");
@@ -137,34 +138,44 @@ void destor_start() {
 	stat_file = sdscat(stat_file, "/destor.stat");
 
 	FILE *fp;
-	if ((fp = fopen(stat_file, "r"))) {
+	if ((fp = fopen(stat_file, "r")))
+	{
+		size_t ret;
 
-		fread(&destor.chunk_num, 8, 1, fp);
-		fread(&destor.stored_chunk_num, 8, 1, fp);
-
-		fread(&destor.data_size, 8, 1, fp);
-		fread(&destor.stored_data_size, 8, 1, fp);
-
-		fread(&destor.zero_chunk_num, 8, 1, fp);
-		fread(&destor.zero_chunk_size, 8, 1, fp);
-
-		fread(&destor.rewritten_chunk_num, 8, 1, fp);
-		fread(&destor.rewritten_chunk_size, 8, 1, fp);
-
-		fread(&destor.index_memory_footprint, 4, 1, fp);
-
-		fread(&destor.live_container_num, 4, 1, fp);
+		ret = fread(&destor.chunk_num, 8, 1, fp);
+		assert(ret == 1);
+		ret = fread(&destor.stored_chunk_num, 8, 1, fp);
+		assert(ret == 1);
+		ret = fread(&destor.data_size, 8, 1, fp);
+		assert(ret == 1);
+		ret = fread(&destor.stored_data_size, 8, 1, fp);
+		assert(ret == 1);
+		ret = fread(&destor.zero_chunk_num, 8, 1, fp);
+		assert(ret == 1);
+		ret = fread(&destor.zero_chunk_size, 8, 1, fp);
+		assert(ret == 1);
+		ret = fread(&destor.rewritten_chunk_num, 8, 1, fp);
+		assert(ret == 1);
+		ret = fread(&destor.rewritten_chunk_size, 8, 1, fp);
+		assert(ret == 1);
+		ret = fread(&destor.index_memory_footprint, 4, 1, fp);
+		assert(ret == 1);
+		ret = fread(&destor.live_container_num, 4, 1, fp);
+		assert(ret == 1);
 
 		int last_retention_time;
-		fread(&last_retention_time, 4, 1, fp);
-		assert(last_retention_time == destor.backup_retention_time);
+		ret = fread(&last_retention_time, 4, 1, fp);
+		assert(ret == 1 && last_retention_time == destor.backup_retention_time);
 
 		int last_level;
-		fread(&last_level, 4, 1, fp);
+		ret = fread(&last_level, 4, 1, fp);
+		assert(ret == 1);
 		check_simulation_level(last_level, destor.simulation_level);
 
 		fclose(fp);
-	} else {
+	}
+	else
+	{
 		destor.chunk_num = 0;
 		destor.stored_chunk_num = 0;
 		destor.data_size = 0;
@@ -180,12 +191,14 @@ void destor_start() {
 	sdsfree(stat_file);
 }
 
-void destor_shutdown() {
+void destor_shutdown()
+{
 	sds stat_file = sdsdup(destor.working_directory);
 	stat_file = sdscat(stat_file, "/destor.stat");
 
 	FILE *fp;
-	if ((fp = fopen(stat_file, "w")) == 0) {
+	if ((fp = fopen(stat_file, "w")) == 0)
+	{
 		destor_log(DESTOR_WARNING, "Fatal error, can not open destor.stat!");
 		exit(1);
 	}
@@ -214,7 +227,8 @@ void destor_shutdown() {
 	sdsfree(stat_file);
 }
 
-void destor_stat() {
+void destor_stat()
+{
 	printf("=== destor stat ===\n");
 
 	printf("the index memory footprint (B): %" PRId32 "\n",
@@ -233,9 +247,8 @@ void destor_stat() {
 			destor.data_size - destor.stored_data_size);
 
 	printf("deduplication ratio: %.4f, %.4f\n",
-			(destor.data_size - destor.stored_data_size)
-					/ (double) destor.data_size,
-			((double) destor.data_size) / (destor.stored_data_size));
+		   (destor.data_size - destor.stored_data_size) / (double)destor.data_size,
+		   ((double)destor.data_size) / (destor.stored_data_size));
 
 	printf("the number of zero chunks: %" PRId64 "\n", destor.zero_chunk_num);
 	printf("the size of zero chunks (B): %" PRId64 "\n", destor.zero_chunk_size);
@@ -244,7 +257,7 @@ void destor_stat() {
 	printf("the size of rewritten chunks (B): %" PRId64 "\n",
 			destor.rewritten_chunk_size);
 	printf("rewrite ratio: %.4f\n",
-			destor.rewritten_chunk_size / (double) destor.data_size);
+		   destor.rewritten_chunk_size / (double)destor.data_size);
 
 	if (destor.simulation_level == SIMULATION_NO)
 		printf("simulation level is %s\n", "NO");
@@ -254,7 +267,8 @@ void destor_stat() {
 		printf("simulation level is %s\n", "APPEND");
 	else if (destor.simulation_level == SIMULATION_ALL)
 		printf("simulation level is %s\n", "ALL");
-	else {
+	else
+	{
 		printf("Invalid simulation level.\n");
 	}
 
@@ -262,7 +276,8 @@ void destor_stat() {
 	exit(0);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
 	destor_start();
 
@@ -270,9 +285,10 @@ int main(int argc, char **argv) {
 	int revision = -1;
 
 	int opt = 0;
-	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
-			!= -1) {
-		switch (opt) {
+	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1)
+	{
+		switch (opt)
+		{
 		case 'r':
 			job = DESTOR_RESTORE;
 			revision = atoi(optarg);
@@ -286,7 +302,8 @@ int main(int argc, char **argv) {
 		case 'h':
 			usage();
 			break;
-		case 'p': {
+		case 'p':
+		{
 			sds param = sdsnew(optarg);
 			load_config_from_string(param);
 			break;
@@ -298,12 +315,16 @@ int main(int argc, char **argv) {
 
 	sds path = NULL;
 
-	switch (job) {
+	switch (job)
+	{
 	case DESTOR_BACKUP:
 
-		if (argc > optind) {
+		if (argc > optind)
+		{
 			path = sdsnew(argv[optind]);
-		} else {
+		}
+		else
+		{
 			fprintf(stderr, "backup job needs a protected path!\n");
 			usage();
 		}
@@ -314,12 +335,14 @@ int main(int argc, char **argv) {
 		 * The backup concludes.
 		 * GC starts
 		 * */
-		if(destor.backup_retention_time >= 0
-				&& jcr.id >= destor.backup_retention_time){
+		if (destor.backup_retention_time >= 0 && jcr.id >= destor.backup_retention_time)
+		{
 			NOTICE("GC is running!");
 			do_delete(jcr.id - destor.backup_retention_time);
 			printf("live containers: %d\n", destor.live_container_num);
-		}else{
+		}
+		else
+		{
             printf("live containers: %d\n", jcr.total_container_num);
 		}
 
@@ -327,13 +350,17 @@ int main(int argc, char **argv) {
 
 		break;
 	case DESTOR_RESTORE:
-		if (revision < 0) {
+		if (revision < 0)
+		{
 			fprintf(stderr, "A job id is required!\n");
 			usage();
 		}
-		if (argc > optind) {
+		if (argc > optind)
+		{
 			path = sdsnew(argv[optind]);
-		} else {
+		}
+		else
+		{
 			fprintf(stderr, "A target directory is required!\n");
 			usage();
 		}
@@ -342,10 +369,14 @@ int main(int argc, char **argv) {
 
 		sdsfree(path);
 		break;
-	case DESTOR_MAKE_TRACE: {
-		if (argc > optind) {
+	case DESTOR_MAKE_TRACE:
+	{
+		if (argc > optind)
+		{
 			path = sdsnew(argv[optind]);
-		} else {
+		}
+		else
+		{
 			fprintf(stderr, "A target directory is required!\n");
 			usage();
 		}
@@ -363,8 +394,9 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-struct chunk* new_chunk(int32_t size) {
-	struct chunk* ck = (struct chunk*) malloc(sizeof(struct chunk));
+struct chunk *new_chunk(int32_t size)
+{
+	struct chunk *ck = (struct chunk *)malloc(sizeof(struct chunk));
 
 	ck->flag = CHUNK_UNIQUE;
 	ck->id = TEMPORARY_ID;
@@ -379,16 +411,20 @@ struct chunk* new_chunk(int32_t size) {
 	return ck;
 }
 
-void free_chunk(struct chunk* ck) {
-	if (ck->data) {
+void free_chunk(void* data)
+{
+	struct chunk *ck = data;
+	if (ck->data)
+	{
 		free(ck->data);
 		ck->data = NULL;
 	}
 	free(ck);
 }
 
-struct segment* new_segment() {
-	struct segment * s = (struct segment*) malloc(sizeof(struct segment));
+struct segment *new_segment()
+{
+	struct segment *s = (struct segment *)malloc(sizeof(struct segment));
 	s->id = TEMPORARY_ID;
 	s->chunk_num = 0;
 	s->chunks = g_sequence_new(NULL);
@@ -402,10 +438,13 @@ struct segment* new_segment_full(){
 	return s;
 }
 
-void free_segment(struct segment* s) {
+void free_segment(void *void_s)
+{
+	struct segment *s = void_s;
 	GSequenceIter *begin = g_sequence_get_begin_iter(s->chunks);
 	GSequenceIter *end = g_sequence_get_end_iter(s->chunks);
-	for(; begin != end; begin = g_sequence_get_begin_iter(s->chunks)){
+	for (; begin != end; begin = g_sequence_get_begin_iter(s->chunks))
+	{
 		free_chunk(g_sequence_get(begin));
 		g_sequence_remove(begin);
 	}
@@ -417,14 +456,21 @@ void free_segment(struct segment* s) {
 	free(s);
 }
 
-gboolean g_fingerprint_equal(fingerprint* fp1, fingerprint* fp2) {
+gboolean g_fingerprint_equal(const void *void_fp1, const void *void_fp2)
+{
+	fingerprint* fp1 = (fingerprint*)void_fp1;
+	fingerprint* fp2 = (fingerprint*)void_fp2;
 	return !memcmp(fp1, fp2, sizeof(fingerprint));
 }
 
-gint g_fingerprint_cmp(fingerprint* fp1, fingerprint* fp2, gpointer user_data) {
+gint g_fingerprint_cmp(const void *void_fp1, const void *void_fp2, gpointer user_data)
+{
+	fingerprint* fp1 = (fingerprint*)void_fp1;
+	fingerprint* fp2 = (fingerprint*)void_fp2;
 	return memcmp(fp1, fp2, sizeof(fingerprint));
 }
 
-gint g_chunk_cmp(struct chunk* a, struct chunk* b, gpointer user_data){
+gint g_chunk_cmp(struct chunk *a, struct chunk *b, gpointer user_data)
+{
 	return memcmp(&a->fp, b->fp, sizeof(fingerprint));
 }

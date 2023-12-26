@@ -4,15 +4,16 @@
 #include "jcr.h"
 
 static int64_t container_count = 0;
-static FILE* fp;
+static FILE *fp;
 /* Control the concurrent accesses to fp. */
 static pthread_mutex_t mutex;
 
 static pthread_t append_t;
 
-static SyncQueue* container_buffer;
+static SyncQueue *container_buffer;
 
-struct metaEntry {
+struct metaEntry
+{
 	int32_t off;
 	int32_t len;
 	fingerprint fp;
@@ -21,9 +22,11 @@ struct metaEntry {
 /*
  * We must ensure a container is either in the buffer or written to disks.
  */
-static void* append_thread(void *arg) {
+static void *append_thread(void *arg)
+{
 
-	while (1) {
+	while (1)
+	{
 		struct container *c = sync_queue_get_top(container_buffer);
 		if (c == NULL)
 			break;
@@ -43,16 +46,21 @@ static void* append_thread(void *arg) {
 	return NULL;
 }
 
-void init_container_store() {
+void init_container_store()
+{
 
 	sds containerfile = sdsdup(destor.working_directory);
 	containerfile = sdscat(containerfile, "/container.pool");
 
-	if ((fp = fopen(containerfile, "r+"))) {
-		fread(&container_count, 8, 1, fp);
-	} else if (!(fp = fopen(containerfile, "w+"))) {
+	if ((fp = fopen(containerfile, "r+")))
+	{
+		size_t ret = fread(&container_count, 8, 1, fp);
+		assert(ret == 1);
+	}
+	else if (!(fp = fopen(containerfile, "w+")))
+	{
 		perror(
-				"Can not create container.pool for read and write because");
+			"Can not create container.pool for read and write because");
 		exit(1);
 	}
 
@@ -64,14 +72,16 @@ void init_container_store() {
 
 	pthread_create(&append_t, NULL, append_thread, NULL);
 
-    NOTICE("Init container store successfully");
+	NOTICE("Init container store successfully");
 }
 
-void container_store_sync(){
-    fdatasync(fileno(fp));
+void container_store_sync()
+{
+	fdatasync(fileno(fp));
 }
 
-void close_container_store() {
+void close_container_store()
+{
 	sync_queue_term(container_buffer);
 
 	pthread_join(append_t, NULL);
@@ -86,19 +96,21 @@ void close_container_store() {
 	pthread_mutex_destroy(&mutex);
 }
 
-static void init_container_meta(struct containerMeta *meta) {
+static void init_container_meta(struct containerMeta *meta)
+{
 	meta->chunk_num = 0;
 	meta->data_size = 0;
 	meta->id = TEMPORARY_ID;
 	meta->map = g_hash_table_new_full(g_int_hash, g_fingerprint_equal, NULL,
-			free);
+									  free);
 }
 
 /*
  * For backup.
  */
-struct container* create_container() {
-	struct container *c = (struct container*) malloc(sizeof(struct container));
+struct container *create_container()
+{
+	struct container *c = (struct container *)malloc(sizeof(struct container));
 	if (destor.simulation_level < SIMULATION_APPEND)
 		c->data = calloc(1, CONTAINER_SIZE);
 	else
@@ -109,14 +121,17 @@ struct container* create_container() {
 	return c;
 }
 
-inline containerid get_container_id(struct container* c) {
+inline containerid get_container_id(struct container *c)
+{
 	return c->meta.id;
 }
 
-void write_container_async(struct container* c) {
+void write_container_async(struct container *c)
+{
 	assert(c->meta.chunk_num == g_hash_table_size(c->meta.map));
 
-	if (container_empty(c)) {
+	if (container_empty(c))
+	{
 		/* An empty container
 		 * It possibly occurs in the end of backup */
 		container_count--;
@@ -131,11 +146,13 @@ void write_container_async(struct container* c) {
 /*
  * Called by Append phase
  */
-void write_container(struct container* c) {
+void write_container(struct container *c)
+{
 
 	assert(c->meta.chunk_num == g_hash_table_size(c->meta.map));
 
-	if (container_empty(c)) {
+	if (container_empty(c))
+	{
 		/* An empty container
 		 * It possibly occurs in the end of backup */
 		container_count--;
@@ -147,9 +164,10 @@ void write_container(struct container* c) {
 	VERBOSE("Append phase: Writing container %lld of %d chunks", c->meta.id,
 			c->meta.chunk_num);
 
-	if (destor.simulation_level < SIMULATION_APPEND) {
+	if (destor.simulation_level < SIMULATION_APPEND)
+	{
 
-		unsigned char * cur = &c->data[CONTAINER_SIZE - CONTAINER_META_SIZE];
+		unsigned char *cur = &c->data[CONTAINER_SIZE - CONTAINER_META_SIZE];
 		ser_declare;
 		ser_begin(cur, CONTAINER_META_SIZE);
 		ser_int64(c->meta.id);
@@ -159,8 +177,9 @@ void write_container(struct container* c) {
 		GHashTableIter iter;
 		gpointer key, value;
 		g_hash_table_iter_init(&iter, c->meta.map);
-		while (g_hash_table_iter_next(&iter, &key, &value)) {
-			struct metaEntry *me = (struct metaEntry *) value;
+		while (g_hash_table_iter_next(&iter, &key, &value))
+		{
+			struct metaEntry *me = (struct metaEntry *)value;
 			ser_bytes(&me->fp, sizeof(fingerprint));
 			ser_bytes(&me->len, sizeof(int32_t));
 			ser_bytes(&me->off, sizeof(int32_t));
@@ -170,17 +189,21 @@ void write_container(struct container* c) {
 
 		pthread_mutex_lock(&mutex);
 
-		if (fseek(fp, c->meta.id * CONTAINER_SIZE + 8, SEEK_SET) != 0) {
+		if (fseek(fp, c->meta.id * CONTAINER_SIZE + 8, SEEK_SET) != 0)
+		{
 			perror("Fail seek in container store.");
 			exit(1);
 		}
-		if(fwrite(c->data, CONTAINER_SIZE, 1, fp) != 1){
+		if (fwrite(c->data, CONTAINER_SIZE, 1, fp) != 1)
+		{
 			perror("Fail to write a container in container store.");
 			exit(1);
 		}
 
 		pthread_mutex_unlock(&mutex);
-	} else {
+	}
+	else
+	{
 		char buf[CONTAINER_META_SIZE];
 		memset(buf, 0, CONTAINER_META_SIZE);
 
@@ -193,8 +216,9 @@ void write_container(struct container* c) {
 		GHashTableIter iter;
 		gpointer key, value;
 		g_hash_table_iter_init(&iter, c->meta.map);
-		while (g_hash_table_iter_next(&iter, &key, &value)) {
-			struct metaEntry *me = (struct metaEntry *) value;
+		while (g_hash_table_iter_next(&iter, &key, &value))
+		{
+			struct metaEntry *me = (struct metaEntry *)value;
 			ser_bytes(&me->fp, sizeof(fingerprint));
 			ser_bytes(&me->len, sizeof(int32_t));
 			ser_bytes(&me->off, sizeof(int32_t));
@@ -204,27 +228,31 @@ void write_container(struct container* c) {
 
 		pthread_mutex_lock(&mutex);
 
-		if(fseek(fp, c->meta.id * CONTAINER_META_SIZE + 8, SEEK_SET) != 0){
+		if (fseek(fp, c->meta.id * CONTAINER_META_SIZE + 8, SEEK_SET) != 0)
+		{
 			perror("Fail seek in container store.");
 			exit(1);
 		}
-		if(fwrite(buf, CONTAINER_META_SIZE, 1, fp) != 1){
+		if (fwrite(buf, CONTAINER_META_SIZE, 1, fp) != 1)
+		{
 			perror("Fail to write a container in container store.");
 			exit(1);
 		}
 
 		pthread_mutex_unlock(&mutex);
 	}
-
 }
 
-struct container* retrieve_container_by_id(containerid id) {
-	struct container *c = (struct container*) malloc(sizeof(struct container));
+struct container *retrieve_container_by_id(containerid id)
+{
+	struct container *c = (struct container *)malloc(sizeof(struct container));
 
 	init_container_meta(&c->meta);
 
+	size_t ret;
 	unsigned char *cur = 0;
-	if (destor.simulation_level >= SIMULATION_RESTORE) {
+	if (destor.simulation_level >= SIMULATION_RESTORE)
+	{
 		c->data = malloc(CONTAINER_META_SIZE);
 
 		pthread_mutex_lock(&mutex);
@@ -233,20 +261,24 @@ struct container* retrieve_container_by_id(containerid id) {
 			fseek(fp, id * CONTAINER_META_SIZE + 8, SEEK_SET);
 		else
 			fseek(fp, (id + 1) * CONTAINER_SIZE - CONTAINER_META_SIZE + 8,
-			SEEK_SET);
+				  SEEK_SET);
 
-		fread(c->data, CONTAINER_META_SIZE, 1, fp);
+		ret = fread(c->data, CONTAINER_META_SIZE, 1, fp);
+		assert(ret == 1);
 
 		pthread_mutex_unlock(&mutex);
 
 		cur = c->data;
-	} else {
+	}
+	else
+	{
 		c->data = malloc(CONTAINER_SIZE);
 
 		pthread_mutex_lock(&mutex);
 
 		fseek(fp, id * CONTAINER_SIZE + 8, SEEK_SET);
-		fread(c->data, CONTAINER_SIZE, 1, fp);
+		ret = fread(c->data, CONTAINER_SIZE, 1, fp);
+		assert(ret == 1);
 
 		pthread_mutex_unlock(&mutex);
 
@@ -260,15 +292,17 @@ struct container* retrieve_container_by_id(containerid id) {
 	unser_int32(c->meta.chunk_num);
 	unser_int32(c->meta.data_size);
 
-	if(c->meta.id != id){
+	if (c->meta.id != id)
+	{
 		WARNING("expect %lld, but read %lld", id, c->meta.id);
 		assert(c->meta.id == id);
 	}
 
 	int i;
-	for (i = 0; i < c->meta.chunk_num; i++) {
-		struct metaEntry* me = (struct metaEntry*) malloc(
-				sizeof(struct metaEntry));
+	for (i = 0; i < c->meta.chunk_num; i++)
+	{
+		struct metaEntry *me = (struct metaEntry *)malloc(
+			sizeof(struct metaEntry));
 		unser_bytes(&me->fp, sizeof(fingerprint));
 		unser_bytes(&me->len, sizeof(int32_t));
 		unser_bytes(&me->off, sizeof(int32_t));
@@ -277,7 +311,8 @@ struct container* retrieve_container_by_id(containerid id) {
 
 	unser_end(cur, CONTAINER_META_SIZE);
 
-	if (destor.simulation_level >= SIMULATION_RESTORE) {
+	if (destor.simulation_level >= SIMULATION_RESTORE)
+	{
 		free(c->data);
 		c->data = 0;
 	}
@@ -285,10 +320,12 @@ struct container* retrieve_container_by_id(containerid id) {
 	return c;
 }
 
-static struct containerMeta* container_meta_duplicate(struct container *c) {
-	struct containerMeta* base = &c->meta;
-	struct containerMeta* dup = (struct containerMeta*) malloc(
-			sizeof(struct containerMeta));
+void *container_meta_duplicate(void *void_c)
+{
+	struct container *c = void_c;
+	struct containerMeta *base = &c->meta;
+	struct containerMeta *dup = (struct containerMeta *)malloc(
+		sizeof(struct containerMeta));
 	init_container_meta(dup);
 	dup->id = base->id;
 	dup->chunk_num = base->chunk_num;
@@ -297,27 +334,29 @@ static struct containerMeta* container_meta_duplicate(struct container *c) {
 	GHashTableIter iter;
 	gpointer key, value;
 	g_hash_table_iter_init(&iter, base->map);
-	while (g_hash_table_iter_next(&iter, &key, &value)) {
-		struct metaEntry* me = (struct metaEntry*) malloc(
-				sizeof(struct metaEntry));
+	while (g_hash_table_iter_next(&iter, &key, &value))
+	{
+		struct metaEntry *me = (struct metaEntry *)malloc(
+			sizeof(struct metaEntry));
 		memcpy(me, value, sizeof(struct metaEntry));
 		g_hash_table_insert(dup->map, &me->fp, me);
 	}
 
-	return dup;
+	return (void *)dup;
 }
 
-struct containerMeta* retrieve_container_meta_by_id(containerid id) {
-	struct containerMeta* cm = NULL;
+struct containerMeta *retrieve_container_meta_by_id(containerid id)
+{
+	struct containerMeta *cm = NULL;
 
 	/* First, we find it in the buffer */
 	cm = sync_queue_find(container_buffer, container_check_id, &id,
-			container_meta_duplicate);
+						 container_meta_duplicate);
 
 	if (cm)
 		return cm;
 
-	cm = (struct containerMeta*) malloc(sizeof(struct containerMeta));
+	cm = (struct containerMeta *)malloc(sizeof(struct containerMeta));
 	init_container_meta(cm);
 
 	unsigned char buf[CONTAINER_META_SIZE];
@@ -328,9 +367,10 @@ struct containerMeta* retrieve_container_meta_by_id(containerid id) {
 		fseek(fp, id * CONTAINER_META_SIZE + 8, SEEK_SET);
 	else
 		fseek(fp, (id + 1) * CONTAINER_SIZE - CONTAINER_META_SIZE + 8,
-		SEEK_SET);
+			  SEEK_SET);
 
-	fread(buf, CONTAINER_META_SIZE, 1, fp);
+	size_t ret = fread(buf, CONTAINER_META_SIZE, 1, fp);
+	assert(ret == 1);
 
 	pthread_mutex_unlock(&mutex);
 
@@ -341,15 +381,17 @@ struct containerMeta* retrieve_container_meta_by_id(containerid id) {
 	unser_int32(cm->chunk_num);
 	unser_int32(cm->data_size);
 
-	if(cm->id != id){
+	if (cm->id != id)
+	{
 		WARNING("expect %lld, but read %lld", id, cm->id);
 		assert(cm->id == id);
 	}
 
 	int i;
-	for (i = 0; i < cm->chunk_num; i++) {
-		struct metaEntry* me = (struct metaEntry*) malloc(
-				sizeof(struct metaEntry));
+	for (i = 0; i < cm->chunk_num; i++)
+	{
+		struct metaEntry *me = (struct metaEntry *)malloc(
+			sizeof(struct metaEntry));
 		unser_bytes(&me->fp, sizeof(fingerprint));
 		unser_bytes(&me->len, sizeof(int32_t));
 		unser_bytes(&me->off, sizeof(int32_t));
@@ -359,29 +401,32 @@ struct containerMeta* retrieve_container_meta_by_id(containerid id) {
 	return cm;
 }
 
-static struct metaEntry* get_metaentry_in_container_meta(
-		struct containerMeta* cm, fingerprint *fp) {
+static struct metaEntry *get_metaentry_in_container_meta(
+	struct containerMeta *cm, fingerprint *fp)
+{
 	return g_hash_table_lookup(cm->map, fp);
 }
 
-struct chunk* get_chunk_in_container(struct container* c, fingerprint *fp) {
-	struct metaEntry* me = get_metaentry_in_container_meta(&c->meta, fp);
+struct chunk *get_chunk_in_container(struct container *c, fingerprint *fp)
+{
+	struct metaEntry *me = get_metaentry_in_container_meta(&c->meta, fp);
 
 	assert(me);
 
-	struct chunk* ck = new_chunk(me->len);
+	struct chunk *ck = new_chunk(me->len);
 
 	if (destor.simulation_level < SIMULATION_RESTORE)
 		memcpy(ck->data, c->data + me->off, me->len);
 
 	ck->size = me->len;
 	ck->id = c->meta.id;
-	memcpy(&ck->fp, &fp, sizeof(fingerprint));
+	memcpy(&ck->fp, fp, sizeof(fingerprint));
 
 	return ck;
 }
 
-int container_overflow(struct container* c, int32_t size) {
+int container_overflow(struct container *c, int32_t size)
+{
 	if (c->meta.data_size + size > CONTAINER_SIZE - CONTAINER_META_SIZE)
 		return 1;
 	/*
@@ -397,15 +442,17 @@ int container_overflow(struct container* c, int32_t size) {
  * return 1 indicates success.
  * return 0 indicates fail.
  */
-int add_chunk_to_container(struct container* c, struct chunk* ck) {
+int add_chunk_to_container(struct container *c, struct chunk *ck)
+{
 	assert(!container_overflow(c, ck->size));
-	if (g_hash_table_contains(c->meta.map, &ck->fp)) {
+	if (g_hash_table_contains(c->meta.map, &ck->fp))
+	{
 		NOTICE("Writing a chunk already in the container buffer!");
 		ck->id = c->meta.id;
 		return 0;
 	}
 
-	struct metaEntry* me = (struct metaEntry*) malloc(sizeof(struct metaEntry));
+	struct metaEntry *me = (struct metaEntry *)malloc(sizeof(struct metaEntry));
 	memcpy(&me->fp, &ck->fp, sizeof(fingerprint));
 	me->len = ck->size;
 	me->off = c->meta.data_size;
@@ -423,49 +470,69 @@ int add_chunk_to_container(struct container* c, struct chunk* ck) {
 	return 1;
 }
 
-void free_container_meta(struct containerMeta* cm) {
+void free_container_meta(void *void_cm)
+{
+	struct containerMeta *cm = void_cm;
 	g_hash_table_destroy(cm->map);
 	free(cm);
 }
 
-void free_container(struct container* c) {
+void free_container(void *void_c)
+{
+	struct container *c = void_c;
 	g_hash_table_destroy(c->meta.map);
 	if (c->data)
 		free(c->data);
 	free(c);
 }
 
-int container_empty(struct container* c) {
+int container_empty(struct container *c)
+{
 	return c->meta.chunk_num == 0 ? 1 : 0;
 }
 
 /*
  * Return 0 if doesn't exist.
  */
-int lookup_fingerprint_in_container_meta(struct containerMeta* cm,
-		fingerprint *fp) {
+int lookup_fingerprint_in_container_meta(void *void_cm,
+										 void *void_fp)
+{
+	struct containerMeta *cm = void_cm;
+	fingerprint *fp = void_fp;
 	return g_hash_table_lookup(cm->map, fp) == NULL ? 0 : 1;
 }
 
-int lookup_fingerprint_in_container(struct container* c, fingerprint *fp) {
+int lookup_fingerprint_in_container(void *void_c,
+									void *void_fp)
+{
+	struct container *c = void_c;
+	fingerprint *fp = void_fp;
 	return lookup_fingerprint_in_container_meta(&c->meta, fp);
 }
 
-gint g_container_cmp_desc(struct container* c1, struct container* c2,
-		gpointer user_data) {
+gint g_container_cmp_desc(struct container *c1, struct container *c2,
+						  gpointer user_data)
+{
 	return g_container_meta_cmp_desc(&c1->meta, &c2->meta, user_data);
 }
 
-gint g_container_meta_cmp_desc(struct containerMeta* cm1,
-		struct containerMeta* cm2, gpointer user_data) {
+gint g_container_meta_cmp_desc(struct containerMeta *cm1,
+							   struct containerMeta *cm2, gpointer user_data)
+{
 	return cm2->id - cm1->id;
 }
 
-int container_check_id(struct container* c, containerid* id) {
+int container_check_id(void *void_c, void *void_id)
+{
+	struct container *c = void_c;
+	containerid *id = void_id;
 	return container_meta_check_id(&c->meta, id);
 }
 
-int container_meta_check_id(struct containerMeta* cm, containerid* id) {
+int container_meta_check_id(void *void_cm, void *void_id)
+{
+	struct containerMeta *cm = void_cm;
+	containerid *id = void_id;
 	return cm->id == *id ? 1 : 0;
 }
 
@@ -473,11 +540,13 @@ int container_meta_check_id(struct containerMeta* cm, containerid* id) {
  * foreach the fingerprints in the container.
  * Apply the 'func' for each fingerprint.
  */
-void container_meta_foreach(struct containerMeta* cm, void (*func)(fingerprint*, void*), void* data){
+void container_meta_foreach(struct containerMeta *cm, void (*func)(fingerprint*, void *), void *data)
+{
 	GHashTableIter iter;
 	gpointer key, value;
 	g_hash_table_iter_init(&iter, cm->map);
-	while(g_hash_table_iter_next(&iter, &key, &value)){
+	while (g_hash_table_iter_next(&iter, &key, &value))
+	{
 		func(key, data);
 	}
 }

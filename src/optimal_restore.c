@@ -26,7 +26,8 @@ static struct accessRecords* new_access_records(containerid id) {
 	return r;
 }
 
-static void free_access_records(struct accessRecords* r) {
+static void free_access_records(void* void_r) {
+	struct accessRecords* r = void_r;
 	assert(g_queue_get_length(r->seqno_queue) == 0);
 	g_queue_free_full(r->seqno_queue, free);
 	free(r);
@@ -35,8 +36,10 @@ static void free_access_records(struct accessRecords* r) {
 /*
  * Ascending order.
  */
-static gint g_access_records_cmp_by_first_seqno(struct accessRecords *a,
-		struct accessRecords *b, gpointer data) {
+static gint g_access_records_cmp_by_first_seqno(const void* void_a,
+		const void *void_b, gpointer data) {
+	struct accessRecords *a = (struct accessRecords *) void_a;
+	struct accessRecords *b = (struct accessRecords *) void_b;
 	int *da = g_queue_peek_head(a->seqno_queue);
 	if (da == NULL)
 		return 1;
@@ -159,8 +162,9 @@ static struct chunk* optimal_cache_lookup(fingerprint *fp) {
 
 struct accessRecords* victim;
 
-static int find_kicked_container(struct container* con, GHashTable *ht) {
-
+static int find_kicked_container(void* void_con, void *void_ht) {
+	struct container* con = void_con;
+	GHashTable *ht = void_ht;
 	struct accessRecords* r = g_hash_table_lookup(ht, &con->meta.id);
 	if(r){
 		victim = r;
@@ -169,8 +173,9 @@ static int find_kicked_container(struct container* con, GHashTable *ht) {
 	return 0;
 }
 
-static int find_kicked_container_meta(struct containerMeta* cm, GHashTable *ht) {
-
+static int find_kicked_container_meta(void* void_cm, void *void_ht) {
+	struct containerMeta* cm = void_cm;
+	GHashTable *ht = void_ht;
 	struct accessRecords* r = g_hash_table_lookup(ht, &cm->id);
 	if(r){
 		victim = r;

@@ -302,14 +302,14 @@ struct segment {
 };
 
 struct chunk* new_chunk(int32_t);
-void free_chunk(struct chunk*);
+void free_chunk(void*);
 
 struct segment* new_segment();
 struct segment* new_segment_full();
-void free_segment(struct segment* s);
+void free_segment(void* s);
 
-gboolean g_fingerprint_equal(fingerprint* fp1, fingerprint* fp2);
-gint g_fingerprint_cmp(fingerprint* fp1, fingerprint* fp2, gpointer user_data);
+gboolean g_fingerprint_equal(const void* fp1, const void* fp2);
+gint g_fingerprint_cmp(const void* fp1, const void* fp2, gpointer user_data);
 gint g_chunk_cmp(struct chunk* a, struct chunk* b, gpointer user_data);
 
 void hash2code(unsigned char hash[20], char code[40]);

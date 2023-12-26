@@ -11,7 +11,8 @@
 static int32_t backup_version_count;
 static sds recipepath;
 
-void init_recipe_store() {
+void init_recipe_store()
+{
 	recipepath = sdsdup(destor.working_directory);
 	recipepath = sdscat(recipepath, "/recipes/");
 
@@ -19,23 +20,27 @@ void init_recipe_store() {
 	count_fname = sdscat(count_fname, "backupversion.count");
 
 	FILE *fp;
-	if ((fp = fopen(count_fname, "r"))) {
+	if ((fp = fopen(count_fname, "r")))
+	{
 		/* Read if exists. */
-		fread(&backup_version_count, 4, 1, fp);
+		size_t ret = fread(&backup_version_count, 4, 1, fp);
+		assert(ret == 1);
 		fclose(fp);
 	}
 
 	sdsfree(count_fname);
 
-    NOTICE("Init recipe store successfully");
+	NOTICE("Init recipe store successfully");
 }
 
-void close_recipe_store() {
+void close_recipe_store()
+{
 	sds count_fname = sdsdup(recipepath);
 	count_fname = sdscat(count_fname, "backupversion.count");
 
 	FILE *fp;
-	if ((fp = fopen(count_fname, "w")) == NULL) {
+	if ((fp = fopen(count_fname, "w")) == NULL)
+	{
 		perror("Can not open recipes/backupversion.count for write");
 		exit(1);
 	}
@@ -46,22 +51,24 @@ void close_recipe_store() {
 	sdsfree(count_fname);
 }
 
-int32_t get_next_version_number() {
+int32_t get_next_version_number()
+{
 	return backup_version_count++;
 }
 
 /* the write buffer of recipe meta */
-static int metabufsize = 64*1024;
+static int metabufsize = 64 * 1024;
 
 /* the write buffer of records */
-static int recordbufsize = 64*1024;
+static int recordbufsize = 64 * 1024;
 
 /*
  * Create a new backupVersion structure for a backup run.
  */
-struct backupVersion* create_backup_version(const char *path) {
-	struct backupVersion *b = (struct backupVersion *) malloc(
-			sizeof(struct backupVersion));
+struct backupVersion *create_backup_version(const char *path)
+{
+	struct backupVersion *b = (struct backupVersion *)malloc(
+		sizeof(struct backupVersion));
 
 	b->bv_num = get_next_version_number();
 	b->path = sdsnew(path);
@@ -70,7 +77,8 @@ struct backupVersion* create_backup_version(const char *path) {
 	 * If the path points to a file,
 	 */
 	int cur = sdslen(b->path) - 1;
-	while (b->path[cur] != '/') {
+	while (b->path[cur] != '/')
+	{
 		b->path[cur] = 0;
 		cur--;
 	}
@@ -88,7 +96,8 @@ struct backupVersion* create_backup_version(const char *path) {
 
 	sds fname = sdsdup(b->fname_prefix);
 	fname = sdscat(fname, ".meta");
-	if ((b->metadata_fp = fopen(fname, "w")) == 0) {
+	if ((b->metadata_fp = fopen(fname, "w")) == 0)
+	{
 		fprintf(stderr, "Can not create bv%d.meta!\n", b->bv_num);
 		exit(1);
 	}
@@ -99,7 +108,7 @@ struct backupVersion* create_backup_version(const char *path) {
 
 	fwrite(&b->number_of_files, sizeof(b->number_of_files), 1, b->metadata_fp);
 	fwrite(&b->number_of_chunks, sizeof(b->number_of_chunks), 1,
-			b->metadata_fp);
+		   b->metadata_fp);
 
 	int pathlen = sdslen(b->path);
 	fwrite(&pathlen, sizeof(pathlen), 1, b->metadata_fp);
@@ -110,7 +119,8 @@ struct backupVersion* create_backup_version(const char *path) {
 
 	fname = sdscpy(fname, b->fname_prefix);
 	fname = sdscat(fname, ".recipe");
-	if ((b->recipe_fp = fopen(fname, "w+")) <= 0) {
+	if ((b->recipe_fp = fopen(fname, "w+")) <= 0)
+	{
 		fprintf(stderr, "Can not create bv%d.recipe!\n", b->bv_num);
 		exit(1);
 	}
@@ -120,7 +130,8 @@ struct backupVersion* create_backup_version(const char *path) {
 
 	fname = sdscpy(fname, b->fname_prefix);
 	fname = sdscat(fname, ".records");
-	if ((b->record_fp = fopen(fname, "w")) <= 0) {
+	if ((b->record_fp = fopen(fname, "w")) <= 0)
+	{
 		fprintf(stderr, "Can not create bv%d.records!\n", b->bv_num);
 		exit(1);
 	}
@@ -133,7 +144,8 @@ struct backupVersion* create_backup_version(const char *path) {
 /*
  * Check the existence of a backup.
  */
-int backup_version_exists(int number) {
+int backup_version_exists(int number)
+{
 	sds fname = sdsdup(recipepath);
 	fname = sdscat(fname, "bv");
 	char s[20];
@@ -141,7 +153,8 @@ int backup_version_exists(int number) {
 	fname = sdscat(fname, s);
 	fname = sdscat(fname, ".meta");
 
-	if (access(fname, 0) == 0) {
+	if (access(fname, 0) == 0)
+	{
 		sdsfree(fname);
 		return 1;
 	}
@@ -152,15 +165,17 @@ int backup_version_exists(int number) {
 /*
  * Open an existing bversion for a restore run.
  */
-struct backupVersion* open_backup_version(int number) {
+struct backupVersion *open_backup_version(int number)
+{
 
-	if (!backup_version_exists(number)) {
+	if (!backup_version_exists(number))
+	{
 		fprintf(stderr, "Backup version %d doesn't exist", number);
 		exit(1);
 	}
 
-	struct backupVersion *b = (struct backupVersion *) malloc(
-			sizeof(struct backupVersion));
+	struct backupVersion *b = (struct backupVersion *)malloc(
+		sizeof(struct backupVersion));
 
 	b->fname_prefix = sdsdup(recipepath);
 	b->fname_prefix = sdscat(b->fname_prefix, "bv");
@@ -170,42 +185,53 @@ struct backupVersion* open_backup_version(int number) {
 
 	sds fname = sdsdup(b->fname_prefix);
 	fname = sdscat(fname, ".meta");
-	if ((b->metadata_fp = fopen(fname, "r")) == 0) {
+	if ((b->metadata_fp = fopen(fname, "r")) == 0)
+	{
 		fprintf(stderr, "Can not open bv%d.meta!\n", b->bv_num);
 		exit(1);
 	}
 
 	fseek(b->metadata_fp, 0, SEEK_SET);
-	fread(&b->bv_num, sizeof(b->bv_num), 1, b->metadata_fp);
+	size_t ret;
+	ret = fread(&b->bv_num, sizeof(b->bv_num), 1, b->metadata_fp);
+	assert(ret == 1);
 	assert(b->bv_num == number);
-	fread(&b->deleted, sizeof(b->deleted), 1, b->metadata_fp);
+	ret = fread(&b->deleted, sizeof(b->deleted), 1, b->metadata_fp);
+	assert(ret == 1);
 
-	if (b->deleted) {
+	if (b->deleted)
+	{
 		/*fprintf(stderr, "Backup version %d has been deleted!\n", number);*/
-        NOTICE("This version has been deleted!\n");
+		NOTICE("This version has been deleted!\n");
 		/*exit(1);*/
 	}
 
-	fread(&b->number_of_files, sizeof(b->number_of_files), 1, b->metadata_fp);
-	fread(&b->number_of_chunks, sizeof(b->number_of_chunks), 1, b->metadata_fp);
+	ret = fread(&b->number_of_files, sizeof(b->number_of_files), 1, b->metadata_fp);
+	assert(ret == 1);
+	ret = fread(&b->number_of_chunks, sizeof(b->number_of_chunks), 1, b->metadata_fp);
+	assert(ret == 1);
 
 	int pathlen;
-	fread(&pathlen, sizeof(int), 1, b->metadata_fp);
+	ret = fread(&pathlen, sizeof(int), 1, b->metadata_fp);
+	assert(ret == 1);
 	char path[pathlen + 1];
-	fread(path, pathlen, 1, b->metadata_fp);
+	ret = fread(path, pathlen, 1, b->metadata_fp);
+	assert(ret == 1);
 	path[pathlen] = 0;
 	b->path = sdsnew(path);
 
 	fname = sdscpy(fname, b->fname_prefix);
 	fname = sdscat(fname, ".recipe");
-	if ((b->recipe_fp = fopen(fname, "r")) <= 0) {
+	if ((b->recipe_fp = fopen(fname, "r")) <= 0)
+	{
 		fprintf(stderr, "Can not open bv%d.recipe!\n", b->bv_num);
 		exit(1);
 	}
 
 	fname = sdscpy(fname, b->fname_prefix);
 	fname = sdscat(fname, ".records");
-	if ((b->record_fp = fopen(fname, "r")) <= 0) {
+	if ((b->record_fp = fopen(fname, "r")) <= 0)
+	{
 		fprintf(stderr, "Can not open bv%d.records!\n", b->bv_num);
 		exit(1);
 	}
@@ -226,10 +252,12 @@ static containerid access_record = TEMPORARY_ID;
 /*
  * Update the metadata after a backup run is finished.
  */
-void update_backup_version(struct backupVersion *b) {
-	if(b->metabuf && b->metabufoff>0){
+void update_backup_version(struct backupVersion *b)
+{
+	if (b->metabuf && b->metabufoff > 0)
+	{
 		fwrite(b->metabuf, b->metabufoff, 1, b->metadata_fp);
-		b->metabufoff=0;
+		b->metabufoff = 0;
 	}
 
 	fseek(b->metadata_fp, 0, SEEK_SET);
@@ -238,13 +266,14 @@ void update_backup_version(struct backupVersion *b) {
 
 	fwrite(&b->number_of_files, sizeof(b->number_of_files), 1, b->metadata_fp);
 	fwrite(&b->number_of_chunks, sizeof(b->number_of_chunks), 1,
-			b->metadata_fp);
+		   b->metadata_fp);
 
 	int pathlen = sdslen(b->path);
 	fwrite(&pathlen, sizeof(pathlen), 1, b->metadata_fp);
 	fwrite(b->path, sdslen(b->path), 1, b->metadata_fp);
 
-	if(b->recordbuf && b->recordbufoff > 0){
+	if (b->recordbuf && b->recordbufoff > 0)
+	{
 		fwrite(b->recordbuf, b->recordbufoff, 1, b->record_fp);
 		b->recordbufoff = 0;
 	}
@@ -259,12 +288,15 @@ void update_backup_version(struct backupVersion *b) {
 /*
  * Free backup version.
  */
-void free_backup_version(struct backupVersion *b) {
-	if(b->metabuf){
+void free_backup_version(struct backupVersion *b)
+{
+	if (b->metabuf)
+	{
 		free(b->metabuf);
 		b->metabuf = 0;
 	}
-	if(b->recordbuf){
+	if (b->recordbuf)
+	{
 		free(b->recordbuf);
 		b->recordbuf = 0;
 	}
@@ -282,11 +314,13 @@ void free_backup_version(struct backupVersion *b) {
 	free(b);
 }
 
-void append_file_recipe_meta(struct backupVersion* b, struct fileRecipeMeta* r) {
+void append_file_recipe_meta(struct backupVersion *b, struct fileRecipeMeta *r)
+{
 
 	int len = sdslen(r->filename);
 
-	if(sizeof(len) + len + sizeof(r->chunknum) + sizeof(r->filesize) > metabufsize - b->metabufoff){
+	if (sizeof(len) + len + sizeof(r->chunknum) + sizeof(r->filesize) > metabufsize - b->metabufoff)
+	{
 		/* buf is full */
 		fwrite(b->metabuf, b->metabufoff, 1, b->metadata_fp);
 		b->metabufoff = 0;
@@ -308,25 +342,28 @@ void append_file_recipe_meta(struct backupVersion* b, struct fileRecipeMeta* r) 
  * 8-byte segment id,
  * 16-bit backup id, 32-bit off, 16-bit size
  */
-static inline segmentid make_segment_id(int64_t bid, int64_t off, int64_t size){
+static inline segmentid make_segment_id(int64_t bid, int64_t off, int64_t size)
+{
 	return (bid << 48) + (off << 16) + size;
 }
 
-static inline int64_t id_to_size(segmentid id) {
+static inline int64_t id_to_size(segmentid id)
+{
 	return id & (0xffff);
 }
 
-static inline int64_t id_to_off(segmentid id) {
+static inline int64_t id_to_off(segmentid id)
+{
 	return (id >> 16) & 0xffffffff;
 }
 
-static inline int64_t id_to_bnum(segmentid id) {
+static inline int64_t id_to_bnum(segmentid id)
+{
 	return id >> 48;
 }
 
-
-
-segmentid append_segment_flag(struct backupVersion* b, int flag, int segment_size){
+segmentid append_segment_flag(struct backupVersion *b, int flag, int segment_size)
+{
 	assert(flag == CHUNK_SEGMENT_START || flag == CHUNK_SEGMENT_END);
 	struct chunkPointer cp;
 	// Set to a negative number for being distinguished from container ID.
@@ -337,10 +374,10 @@ segmentid append_segment_flag(struct backupVersion* b, int flag, int segment_siz
 	fseek(b->recipe_fp, 0, SEEK_END);
 	int64_t off = ftell(b->recipe_fp);
 
-	if(flag == CHUNK_SEGMENT_START){
+	if (flag == CHUNK_SEGMENT_START)
+	{
 		/* Two flags and many chunk pointers */
-		b->segmentlen = (sizeof(fingerprint) + sizeof(containerid) + sizeof(int32_t))*2
-				+ segment_size * (sizeof(fingerprint) + sizeof(containerid) + sizeof(int32_t));
+		b->segmentlen = (sizeof(fingerprint) + sizeof(containerid) + sizeof(int32_t)) * 2 + segment_size * (sizeof(fingerprint) + sizeof(containerid) + sizeof(int32_t));
 		b->segmentbuf = malloc(b->segmentlen);
 		b->segmentbufoff = 0;
 	}
@@ -352,7 +389,8 @@ segmentid append_segment_flag(struct backupVersion* b, int flag, int segment_siz
 	memcpy(b->segmentbuf + b->segmentbufoff, &cp.size, sizeof(int32_t));
 	b->segmentbufoff += sizeof(int32_t);
 
-	if(flag == CHUNK_SEGMENT_END){
+	if (flag == CHUNK_SEGMENT_END)
+	{
 		VERBOSE("Filter phase: write a segment start at offset %lld!", off);
 		fwrite(b->segmentbuf, b->segmentlen, 1, b->recipe_fp);
 		free(b->segmentbuf);
@@ -360,25 +398,31 @@ segmentid append_segment_flag(struct backupVersion* b, int flag, int segment_siz
 		b->segmentlen = 0;
 	}
 
-	if(flag == CHUNK_SEGMENT_END){
+	if (flag == CHUNK_SEGMENT_END)
+	{
 		return TEMPORARY_ID;
-	}else
+	}
+	else
 		return make_segment_id(b->bv_num, off, segment_size);
 }
 
 /*
  * return the offset
  */
-void append_n_chunk_pointers(struct backupVersion* b,
-		struct chunkPointer* cp, int n) {
+void append_n_chunk_pointers(struct backupVersion *b,
+							 struct chunkPointer *cp, int n)
+{
 
 	if (n <= 0)
 		return;
 	int i;
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < n; i++)
+	{
 		struct chunkPointer bcp = cp[i];
-		if (access_record != TEMPORARY_ID && access_record != bcp.id){
-			if(b->recordbufoff + sizeof(access_record) > recordbufsize){
+		if (access_record != TEMPORARY_ID && access_record != bcp.id)
+		{
+			if (b->recordbufoff + sizeof(access_record) > recordbufsize)
+			{
 				fwrite(b->recordbuf, b->recordbufoff, 1, b->record_fp);
 				b->recordbufoff = 0;
 			}
@@ -399,23 +443,29 @@ void append_n_chunk_pointers(struct backupVersion* b,
 	}
 }
 
-struct fileRecipeMeta* read_next_file_recipe_meta(struct backupVersion* b) {
+struct fileRecipeMeta *read_next_file_recipe_meta(struct backupVersion *b)
+{
 
 	static int read_file_num;
 
 	assert(read_file_num <= b->number_of_files);
 
 	int len;
-	fread(&len, sizeof(len), 1, b->metadata_fp);
+	size_t ret;
+	ret = fread(&len, sizeof(len), 1, b->metadata_fp);
+	assert(ret == 1);
 	char filename[len + 1];
 
-	fread(filename, len, 1, b->metadata_fp);
+	ret = fread(filename, len, 1, b->metadata_fp);
+	assert(ret == 1);
 	filename[len] = 0;
 
-	struct fileRecipeMeta* r = new_file_recipe_meta(filename);
+	struct fileRecipeMeta *r = new_file_recipe_meta(filename);
 
-	fread(&r->chunknum, sizeof(r->chunknum), 1, b->metadata_fp);
-	fread(&r->filesize, sizeof(r->filesize), 1, b->metadata_fp);
+	ret = fread(&r->chunknum, sizeof(r->chunknum), 1, b->metadata_fp);
+	assert(ret == 1);
+	ret = fread(&r->filesize, sizeof(r->filesize), 1, b->metadata_fp);
+	assert(ret == 1);
 
 	read_file_num++;
 
@@ -427,30 +477,36 @@ struct fileRecipeMeta* read_next_file_recipe_meta(struct backupVersion* b) {
  * If no recipe and chunkpointer are read,
  * we arrive at the end of the stream.
  */
-struct chunkPointer* read_next_n_chunk_pointers(struct backupVersion* b, int n,
-		int *k) {
+struct chunkPointer *read_next_n_chunk_pointers(struct backupVersion *b, int n,
+												int *k)
+{
 
 	/* Total number of read chunks. */
 	static int read_chunk_num;
 
-	if (read_chunk_num == b->number_of_chunks) {
+	if (read_chunk_num == b->number_of_chunks)
+	{
 		/* It's the stream end. */
 		*k = 0;
 		return NULL;
 	}
 
-	int num = (b->number_of_chunks - read_chunk_num) > n ?
-					n : (b->number_of_chunks - read_chunk_num), i;
+	int num = (b->number_of_chunks - read_chunk_num) > n ? n : (b->number_of_chunks - read_chunk_num), i;
 
-	struct chunkPointer *cp = (struct chunkPointer *) malloc(
-			sizeof(struct chunkPointer) * num);
+	struct chunkPointer *cp = (struct chunkPointer *)malloc(
+		sizeof(struct chunkPointer) * num);
 
-	for (i = 0; i < num; i++) {
-		fread(&(cp[i].fp), sizeof(fingerprint), 1, b->recipe_fp);
-		fread(&(cp[i].id), sizeof(containerid), 1, b->recipe_fp);
-		fread(&(cp[i].size), sizeof(int32_t), 1, b->recipe_fp);
+	size_t ret;
+	for (i = 0; i < num; i++)
+	{
+		ret = fread(&(cp[i].fp), sizeof(fingerprint), 1, b->recipe_fp);
+		assert(ret == 1);
+		ret = fread(&(cp[i].id), sizeof(containerid), 1, b->recipe_fp);
+		assert(ret == 1);
+		ret = fread(&(cp[i].size), sizeof(int32_t), 1, b->recipe_fp);
+		assert(ret == 1);
 		/* Ignore segment boundaries */
-		if(cp[i].id == 0 - CHUNK_SEGMENT_START || cp[i].id == 0 - CHUNK_SEGMENT_END)
+		if (cp[i].id == 0 - CHUNK_SEGMENT_START || cp[i].id == 0 - CHUNK_SEGMENT_END)
 			i--;
 	}
 
@@ -462,66 +518,77 @@ struct chunkPointer* read_next_n_chunk_pointers(struct backupVersion* b, int n,
 	return cp;
 }
 
-containerid* read_next_n_records(struct backupVersion* b, int n, int *k) {
+containerid *read_next_n_records(struct backupVersion *b, int n, int *k)
+{
 	static int end = 0;
 
-	if (end) {
+	if (end)
+	{
 		*k = 0;
 		return NULL;
 	}
 
 	/* ids[0] indicates the number of IDs */
-	containerid *ids = (containerid *) malloc(sizeof(containerid) * (n + 1));
+	containerid *ids = (containerid *)malloc(sizeof(containerid) * (n + 1));
 	*k = fread(&ids[1], sizeof(containerid), n, b->record_fp);
 
 	/* TEMPORARY_ID indicates all records have been read. */
-	if(ids[*k] == TEMPORARY_ID)
+	if (ids[*k] == TEMPORARY_ID)
 		end = 1;
 
 	ids[0] = *k;
 	return ids;
 }
 
-struct fileRecipeMeta* new_file_recipe_meta(char* name) {
-	struct fileRecipeMeta* r = (struct fileRecipeMeta*) malloc(sizeof(struct fileRecipeMeta));
+struct fileRecipeMeta *new_file_recipe_meta(char *name)
+{
+	struct fileRecipeMeta *r = (struct fileRecipeMeta *)malloc(sizeof(struct fileRecipeMeta));
 	r->filename = sdsnew(name);
 	r->chunknum = 0;
 	r->filesize = 0;
 	return r;
 }
 
-void free_file_recipe_meta(struct fileRecipeMeta* r) {
+void free_file_recipe_meta(struct fileRecipeMeta *r)
+{
 	sdsfree(r->filename);
 	free(r);
 }
 
-struct segmentRecipe* new_segment_recipe() {
-	struct segmentRecipe* sr = (struct segmentRecipe*) malloc(
-			sizeof(struct segmentRecipe));
+struct segmentRecipe *new_segment_recipe()
+{
+	struct segmentRecipe *sr = (struct segmentRecipe *)malloc(
+		sizeof(struct segmentRecipe));
 	sr->id = TEMPORARY_ID;
 	sr->kvpairs = g_hash_table_new_full(g_int64_hash, g_fingerprint_equal,
-			NULL, free);
+										NULL, free);
 	return sr;
 }
 
-void free_segment_recipe(struct segmentRecipe* sr) {
+void free_segment_recipe(void *void_sr)
+{
+	struct segmentRecipe *sr = void_sr;
 	g_hash_table_destroy(sr->kvpairs);
 	free(sr);
 }
 
-void segment_recipe_foreach(struct segmentRecipe* sr, void (*func)(fingerprint*, void*), void* data){
+void segment_recipe_foreach(struct segmentRecipe *sr, void (*func)(fingerprint*, void *), void *data)
+{
 	GHashTableIter iter;
 	gpointer key, value;
 	g_hash_table_iter_init(&iter, sr->kvpairs);
-	while(g_hash_table_iter_next(&iter, &key, &value)){
+	while (g_hash_table_iter_next(&iter, &key, &value))
+	{
 		func(key, data);
 	}
 }
 
-GQueue* prefetch_segments(segmentid id, int prefetch_num) {
+GQueue *prefetch_segments(segmentid id, int prefetch_num)
+{
 	static struct backupVersion *opened_bv;
 
-	if (id == TEMPORARY_ID) {
+	if (id == TEMPORARY_ID)
+	{
 		assert(id != TEMPORARY_ID);
 		return NULL;
 	}
@@ -533,14 +600,16 @@ GQueue* prefetch_segments(segmentid id, int prefetch_num) {
 	/* All prefetched segment recipes */
 	GQueue *segments = g_queue_new();
 
-	if(opened_bv == NULL || opened_bv->bv_num != bnum){
+	if (opened_bv == NULL || opened_bv->bv_num != bnum)
+	{
 		/* The required segment locates in another backup */
-		if(opened_bv && opened_bv->bv_num != jcr.bv->bv_num)
+		if (opened_bv && opened_bv->bv_num != jcr.bv->bv_num)
 			free_backup_version(opened_bv);
 
-		if(bnum == jcr.bv->bv_num)
+		if (bnum == jcr.bv->bv_num)
 			opened_bv = jcr.bv;
-		else{
+		else
+		{
 			opened_bv = open_backup_version(bnum);
 			assert(opened_bv);
 		}
@@ -553,39 +622,53 @@ GQueue* prefetch_segments(segmentid id, int prefetch_num) {
 
 	struct chunkPointer flag;
 	int j;
-	for (j = 0; j < prefetch_num; j++) {
+	size_t ret;
+	for (j = 0; j < prefetch_num; j++)
+	{
 
 		int64_t current_off = ftell(opened_bv->recipe_fp);
 
-		fread(&flag.fp, sizeof(flag.fp), 1, opened_bv->recipe_fp);
-		fread(&flag.id, sizeof(flag.id), 1, opened_bv->recipe_fp);
-		fread(&flag.size, sizeof(flag.size), 1, opened_bv->recipe_fp);
-		if(flag.id != -CHUNK_SEGMENT_START){
+		ret = fread(&flag.fp, sizeof(flag.fp), 1, opened_bv->recipe_fp);
+		assert(ret == 1);
+		ret = fread(&flag.id, sizeof(flag.id), 1, opened_bv->recipe_fp);
+		assert(ret == 1);
+		ret = fread(&flag.size, sizeof(flag.size), 1, opened_bv->recipe_fp);
+		assert(ret == 1);
+		if (flag.id != -CHUNK_SEGMENT_START)
+		{
 			VERBOSE("Dedup phase: no more segment can be prefetched at offset %lld!", current_off);
-			assert(j!=0);
+			assert(j != 0);
 			break;
 		}
 
-		struct segmentRecipe* sr = new_segment_recipe();
+		struct segmentRecipe *sr = new_segment_recipe();
 		sr->id = make_segment_id(opened_bv->bv_num, current_off, flag.size);
 
 		int i;
-		for (i = 0; i < flag.size; i++) {
-			struct chunkPointer* cp = (struct chunkPointer*) malloc(
-					sizeof(struct chunkPointer));
-			fread(&cp->fp, sizeof(cp->fp), 1, opened_bv->recipe_fp);
-			fread(&cp->id, sizeof(cp->id), 1, opened_bv->recipe_fp);
-			fread(&cp->size, sizeof(cp->size), 1, opened_bv->recipe_fp);
-			if(cp->id <= TEMPORARY_ID){
+		for (i = 0; i < flag.size; i++)
+		{
+			struct chunkPointer *cp = (struct chunkPointer *)malloc(
+				sizeof(struct chunkPointer));
+			ret = fread(&cp->fp, sizeof(cp->fp), 1, opened_bv->recipe_fp);
+			assert(ret == 1);
+			ret = fread(&cp->id, sizeof(cp->id), 1, opened_bv->recipe_fp);
+			assert(ret == 1);
+			ret = fread(&cp->size, sizeof(cp->size), 1, opened_bv->recipe_fp);
+			assert(ret == 1);
+			if (cp->id <= TEMPORARY_ID)
+			{
 				WARNING("expect > 0, but being %lld", cp->id);
 				assert(cp->id > TEMPORARY_ID);
 			}
 			g_hash_table_replace(sr->kvpairs, &cp->fp, cp);
 		}
 
-		fread(&flag.fp, sizeof(flag.fp), 1, opened_bv->recipe_fp);
-		fread(&flag.id, sizeof(flag.id), 1, opened_bv->recipe_fp);
-		fread(&flag.size, sizeof(flag.size), 1, opened_bv->recipe_fp);
+		ret = fread(&flag.fp, sizeof(flag.fp), 1, opened_bv->recipe_fp);
+		assert(ret == 1);
+		ret = fread(&flag.id, sizeof(flag.id), 1, opened_bv->recipe_fp);
+		assert(ret == 1);
+		ret = fread(&flag.size, sizeof(flag.size), 1, opened_bv->recipe_fp);
+		assert(ret == 1);
 		assert(flag.id == 0 - CHUNK_SEGMENT_END);
 
 		g_queue_push_tail(segments, sr);
@@ -594,54 +677,77 @@ GQueue* prefetch_segments(segmentid id, int prefetch_num) {
 	return segments;
 }
 
-struct segmentRecipe* read_next_segment(struct backupVersion *bv){
-	if(bv == NULL)
+struct segmentRecipe *read_next_segment(struct backupVersion *bv)
+{
+	if (bv == NULL)
 		return NULL;
 
 	int64_t current_off = ftell(bv->recipe_fp);
 	VERBOSE("read_next_segment: current off is %lld", current_off);
 
 	struct chunkPointer flag;
-	int ret = fread(&flag.fp, sizeof(flag.fp), 1, bv->recipe_fp);
+	size_t ret = fread(&flag.fp, sizeof(flag.fp), 1, bv->recipe_fp);
 	ret += fread(&flag.id, sizeof(flag.id), 1, bv->recipe_fp);
 	ret += fread(&flag.size, sizeof(flag.size), 1, bv->recipe_fp);
-	if(ret != 3 || flag.id != -CHUNK_SEGMENT_START){
+	if (ret != 3 || flag.id != -CHUNK_SEGMENT_START)
+	{
 		/* In the end of the backup recipe */
 		VERBOSE("Dedup phase: no more segment can be read at offset %lld!", current_off);
 		return NULL;
 	}
 
 	/* continue to complete the segment */
-	struct segmentRecipe* sr = new_segment_recipe();
+	struct segmentRecipe *sr = new_segment_recipe();
 	sr->id = make_segment_id(bv->bv_num, current_off, flag.size);
 
 	int i;
-	for (i = 0; i < flag.size; i++) {
-		struct chunkPointer* cp = (struct chunkPointer*) malloc(
-				sizeof(struct chunkPointer));
-		fread(&cp->fp, sizeof(cp->fp), 1, bv->recipe_fp);
-		fread(&cp->id, sizeof(cp->id), 1, bv->recipe_fp);
-		fread(&cp->size, sizeof(cp->size), 1, bv->recipe_fp);
-		if(cp->id <= TEMPORARY_ID){
+	for (i = 0; i < flag.size; i++)
+	{
+		struct chunkPointer *cp = (struct chunkPointer *)malloc(
+			sizeof(struct chunkPointer));
+		size_t ret;
+
+		ret = fread(&cp->fp, sizeof(cp->fp), 1, bv->recipe_fp);
+		assert(ret == 1);
+
+		ret = fread(&cp->id, sizeof(cp->id), 1, bv->recipe_fp);
+		assert(ret == 1);
+
+		ret = fread(&cp->size, sizeof(cp->size), 1, bv->recipe_fp);
+		assert(ret == 1);
+
+		if (cp->id <= TEMPORARY_ID)
+		{
 			WARNING("expect > 0, but being %lld", cp->id);
 			assert(cp->id > TEMPORARY_ID);
 		}
 		g_hash_table_replace(sr->kvpairs, &cp->fp, cp);
+
+		ret = fread(&flag.fp, sizeof(flag.fp), 1, bv->recipe_fp);
+		assert(ret == 1);
+
+		ret = fread(&flag.id, sizeof(flag.id), 1, bv->recipe_fp);
+		assert(ret == 1);
+
+		ret = fread(&flag.size, sizeof(flag.size), 1, bv->recipe_fp);
+		assert(ret == 1);
+		assert(flag.id == 0 - CHUNK_SEGMENT_END);
+
+		return sr;
 	}
-
-	fread(&flag.fp, sizeof(flag.fp), 1, bv->recipe_fp);
-	fread(&flag.id, sizeof(flag.id), 1, bv->recipe_fp);
-	fread(&flag.size, sizeof(flag.size), 1, bv->recipe_fp);
-	assert(flag.id == 0 - CHUNK_SEGMENT_END);
-
-	return sr;
 }
 
-int segment_recipe_check_id(struct segmentRecipe* sr, segmentid *id) {
-     return sr->id == *id;
+int segment_recipe_check_id(void *void_sr, void *void_id)
+{
+	struct segmentRecipe *sr = void_sr;
+	segmentid *id = void_id;
+	return sr->id == *id;
 }
 
-int lookup_fingerprint_in_segment_recipe(struct segmentRecipe* sr,
-        fingerprint *fp) {
-    return g_hash_table_lookup(sr->kvpairs, fp) == NULL ? 0 : 1;
+int lookup_fingerprint_in_segment_recipe(void *void_sr,
+										 void *void_fp)
+{
+	struct segmentRecipe *sr = void_sr;
+	fingerprint *fp = void_fp;
+	return g_hash_table_lookup(sr->kvpairs, fp) == NULL ? 0 : 1;
 }

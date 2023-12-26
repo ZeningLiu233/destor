@@ -151,7 +151,8 @@ static void* read_trace_thread(void *argv) {
 	while (1) {
 		TIMER_DECLARE(1);
 		TIMER_BEGIN(1);
-		fgets(line, 128, trace_file);
+		char * ret = fgets(line, 128, trace_file);
+		assert(ret != NULL);
 		TIMER_END(1, jcr.read_time);
 
 		if (strcmp(line, "stream end") == 0) {
@@ -169,7 +170,8 @@ static void* read_trace_thread(void *argv) {
 
 		/* An additional '\n' is read */
 		c = new_chunk(filenamelen + 2);
-		fgets(c->data, filenamelen + 2, trace_file);
+		ret = fgets(c->data, filenamelen + 2, trace_file);
+		assert(ret != NULL);
 		c->data[filenamelen] = 0;
 		VERBOSE("Read trace phase: %s", c->data);
 
@@ -180,7 +182,8 @@ static void* read_trace_thread(void *argv) {
 		sync_queue_push(trace_queue, c);
 
 		TIMER_BEGIN(1);
-		fgets(line, 128, trace_file);
+		ret = fgets(line, 128, trace_file);
+		assert(ret != NULL);
 		while (strncmp(line, "file end", 8) != 0) {
 			c = new_chunk(0);
 
@@ -194,7 +197,8 @@ static void* read_trace_thread(void *argv) {
 			sync_queue_push(trace_queue, c);
 			TIMER_BEGIN(1),
 
-			fgets(line, 128, trace_file);
+			ret = fgets(line, 128, trace_file);
+			assert(ret != NULL);
 		}
 
 		c = new_chunk(0);

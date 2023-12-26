@@ -100,13 +100,14 @@ containerid* read_next_n_records(struct backupVersion* b, int n, int *k);
 struct fileRecipeMeta* new_file_recipe_meta(char* name);
 void free_file_recipe_meta(struct fileRecipeMeta* r);
 
-int segment_recipe_check_id(struct segmentRecipe* sr, segmentid *id);
+int segment_recipe_check_id(void* sr, void *id);
 struct segmentRecipe* new_segment_recipe();
-void free_segment_recipe(struct segmentRecipe* sr);
+void free_segment_recipe(void* sr);
+void segment_recipe_foreach(struct segmentRecipe* sr, void (*func)(fingerprint *, void*), void* data);
 segmentid append_segment_flag(struct backupVersion* b, int flag, int segment_size);
 GQueue* prefetch_segments(segmentid id, int prefetch_num);
-int lookup_fingerprint_in_segment_recipe(struct segmentRecipe* sr,
-        fingerprint *fp);
+int lookup_fingerprint_in_segment_recipe(void* sr,
+        void *fp);
 
 struct segmentRecipe* read_next_segment(struct backupVersion *bv);
 

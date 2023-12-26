@@ -10,11 +10,14 @@ struct index_overhead index_overhead;
 
 struct index_buffer index_buffer;
 
-gboolean g_feature_equal(char* a, char* b){
+gboolean g_feature_equal(const void* void_a, const void* void_b){
+    char* a = (char* )void_a;
+    char* b = (char* )void_b;
 	return !memcmp(a, b, destor.index_key_size);
 }
 
-guint g_feature_hash(char *feature){
+guint g_feature_hash(const void * void_feature){
+    char *feature = (char* )void_feature;
 	int i, hash = 0;
 	for(i=0; i<destor.index_key_size; i++){
 		hash += feature[i] << (8*i);
@@ -273,7 +276,7 @@ void index_update(GHashTable *features, int64_t id){
 }
 
 inline void index_delete(fingerprint *fp, int64_t id){
-	kvstore_delete(fp, id);
+	kvstore_delete(*fp, id);
 }
 
 /* This function is designed for rewriting. */

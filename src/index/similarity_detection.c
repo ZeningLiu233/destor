@@ -19,8 +19,10 @@ extern struct index_buffer index_buffer;
  * Larger one comes before smaller one.
  * Descending order.
  */
-static gint g_segment_cmp_feature_num(struct segment* a,
-		struct segment* b, gpointer user_data) {
+static gint g_segment_cmp_feature_num(const void* void_a,
+		const void* void_b, gpointer user_data) {
+	struct segment* a = (struct segment*) void_a;
+	struct segment* b = (struct segment*) void_b;
 	gint ret = g_hash_table_size(b->features) - g_hash_table_size(a->features);
 	if (ret == 0) {
 		ret = b->id > a->id ? 1 : -1;
@@ -32,8 +34,10 @@ static gint g_segment_cmp_feature_num(struct segment* a,
 /*
  * Remove the features that are common with top from target.
  */
-static void features_trim(struct segment *target,
-		struct segment *top) {
+static void features_trim(void *void_target,
+		void *void_top) {
+	struct segment *target = void_target;
+	struct segment *top = void_top;
 	GHashTableIter iter;
 	gpointer key, value;
 	g_hash_table_iter_init(&iter, top->features);
@@ -59,7 +63,7 @@ static void top_segment_select(GHashTable* features) {
 	/* Iterate the features of the segment. */
 	while (g_hash_table_iter_next(&iter, &key, &value)) {
 		/* Each feature is mapped to several segment IDs. */
-		segmentid *ids = kvstore_lookup((fingerprint*) key);
+		segmentid *ids = kvstore_lookup((char*) key);
 		if (ids) {
 			index_overhead.lookup_requests++;
 			int i;

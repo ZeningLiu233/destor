@@ -40,9 +40,9 @@ int restore_aware_contains(containerid id);
 double restore_aware_get_cfl();
 
 /* For sorting container records. */
-gint g_record_descmp_by_length(struct containerRecord* a,
-		struct containerRecord* b, gpointer user_data);
-gint g_record_cmp_by_id(struct containerRecord* a, struct containerRecord* b,
+gint g_record_descmp_by_length(const void* a,
+		const void* b, gpointer user_data);
+gint g_record_cmp_by_id(const void* a, const void* b,
 		gpointer user_data);
 
 int rewrite_buffer_push(struct chunk* c);

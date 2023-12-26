@@ -33,12 +33,10 @@ void index_delete(fingerprint *fp, int64_t id);
 void index_check_buffer(struct segment *s);
 int index_update_buffer(struct segment *s);
 
-//void index_delete(fingerprint *);
-
 extern GHashTable* (*sampling)(GSequence *chunks, int32_t chunk_num);
 extern struct segment* (*segmenting)(struct chunk *c);
 
-gboolean g_feature_equal(char* a, char* b);
-guint g_feature_hash(char *feature);
+gboolean g_feature_equal(const void* a, const void* b);
+guint g_feature_hash(const void *feature);
 
 #endif

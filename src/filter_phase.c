@@ -67,8 +67,7 @@ static void* filter_thread(void *arg) {
         GHashTable *recently_unique_chunks = g_hash_table_new_full(g_int64_hash,
         			g_fingerprint_equal, NULL, free_chunk);
 
-        pthread_mutex_lock(&index_lock.mutex);
-
+        g_mutex_lock(&index_lock.mutex);
         TIMER_DECLARE(1);
         TIMER_BEGIN(1);
         /* This function will check the fragmented chunks
@@ -298,11 +297,10 @@ static void* filter_thread(void *arg) {
         free_segment(s);
 
         if(index_lock.wait_threshold > 0 && full == 0){
-        	pthread_cond_broadcast(&index_lock.cond);
+            g_cond_broadcast(&index_lock.cond);
         }
         TIMER_END(1, jcr.filter_time);
-        pthread_mutex_unlock(&index_lock.mutex);
-
+        g_mutex_unlock(&index_lock.mutex);
         g_hash_table_destroy(recently_rewritten_chunks);
         g_hash_table_destroy(recently_unique_chunks);
 

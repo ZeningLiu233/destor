@@ -42,7 +42,7 @@ void init_har() {
 				struct containerRecord *record =
 						(struct containerRecord*) malloc(
 								sizeof(struct containerRecord));
-				sscanf(buf, "%lld %d", &record->cid, &record->size);
+				sscanf(buf, "%ld %d", &record->cid, &record->size);
 
 				g_hash_table_insert(inherited_sparse_containers, &record->cid,
 						record);
@@ -80,7 +80,9 @@ void har_monitor_update(containerid id, int32_t size) {
 	TIMER_END(1, jcr.rewrite_time);
 }
 
-static gint g_record_cmp(struct containerRecord *a, struct containerRecord* b, gpointer user_data){
+static gint g_record_cmp(const void *void_a, const void* void_b, gpointer user_data){
+	struct containerRecord *a = (struct containerRecord *)void_a;
+	struct containerRecord* b = (struct containerRecord *)void_b;
 	return a->size - b->size;
 }
 
@@ -179,7 +181,7 @@ void close_har() {
 	GSequenceIter* sparse_iter = g_sequence_get_begin_iter(seq);
 	while(sparse_iter != g_sequence_get_end_iter(seq)){
 		struct containerRecord* r = g_sequence_get(sparse_iter);
-		fprintf(fp, "%lld %d\n", r->cid, r->size);
+		fprintf(fp, "%ld %d\n", r->cid, r->size);
 		sparse_iter = g_sequence_iter_next(sparse_iter);
 	}
 	fclose(fp);
