@@ -30,7 +30,7 @@ void init_recipe_store()
 
 	sdsfree(count_fname);
 
-	NOTICE("Init recipe store successfully");
+	VERBOSE("Init recipe store successfully");
 }
 
 void close_recipe_store()
@@ -629,11 +629,17 @@ GQueue *prefetch_segments(segmentid id, int prefetch_num)
 		int64_t current_off = ftell(opened_bv->recipe_fp);
 
 		ret = fread(&flag.fp, sizeof(flag.fp), 1, opened_bv->recipe_fp);
-		assert(ret == 1);
+		if (ret != 1) {
+			VERBOSE("Failed to read flag.fp, ret: %ld\n", ret);
+		}
 		ret = fread(&flag.id, sizeof(flag.id), 1, opened_bv->recipe_fp);
-		assert(ret == 1);
+		if (ret != 1) {
+			VERBOSE("Failed to read flag.id, ret: %ld\n", ret);
+		}
 		ret = fread(&flag.size, sizeof(flag.size), 1, opened_bv->recipe_fp);
-		assert(ret == 1);
+		if (ret != 1) {
+			VERBOSE("Failed to read flag.size, ret: %ld\n", ret);
+		}
 		if (flag.id != -CHUNK_SEGMENT_START)
 		{
 			VERBOSE("Dedup phase: no more segment can be prefetched at offset %lld!", current_off);

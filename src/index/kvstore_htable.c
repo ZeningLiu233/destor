@@ -114,7 +114,7 @@ void close_kvstore_htable() {
 		exit(1);
 	}
 
-	NOTICE("flushing hash table!");
+	VERBOSE("flushing hash table!");
 	int key_num = g_hash_table_size(htable);
 	fwrite(&key_num, sizeof(int), 1, fp);
 
@@ -150,7 +150,7 @@ void close_kvstore_htable() {
 
 	fclose(fp);
 
-	NOTICE("flushing hash table successfully!");
+	VERBOSE("flushing hash table successfully!");
 
 	sdsfree(indexpath);
 

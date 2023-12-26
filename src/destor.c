@@ -337,13 +337,13 @@ int main(int argc, char **argv)
 		 * */
 		if (destor.backup_retention_time >= 0 && jcr.id >= destor.backup_retention_time)
 		{
-			NOTICE("GC is running!");
+			VERBOSE("GC is running!");
 			do_delete(jcr.id - destor.backup_retention_time);
-			printf("live containers: %d\n", destor.live_container_num);
+			VERBOSE("live containers: %d\n", destor.live_container_num);
 		}
 		else
 		{
-            printf("live containers: %d\n", jcr.total_container_num);
+            VERBOSE("live containers: %d\n", jcr.total_container_num);
 		}
 
 		sdsfree(path);

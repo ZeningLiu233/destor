@@ -31,7 +31,7 @@ void update_manifest(GHashTable *monitor){
     		g_hash_table_insert(manifest, &rec->id, rec);
     	}
 
-        NOTICE("CMA: read %d records.", g_hash_table_size(manifest));
+        VERBOSE("CMA: read %d records.", g_hash_table_size(manifest));
 
         fclose(fp);
     }
@@ -60,7 +60,7 @@ void update_manifest(GHashTable *monitor){
     		fprintf(fp, "%ld,%d\n", r->id, r->time);
     	}
 
-        NOTICE("CMA: update %d records.", g_hash_table_size(manifest));
+        VERBOSE("CMA: update %d records.", g_hash_table_size(manifest));
         fclose(fp);
     }else{
     	WARNING("Cannot create the manifest!");
@@ -99,7 +99,7 @@ GHashTable* trunc_manifest(int jobid){
     			containerid *cid = (containerid*) malloc(sizeof(containerid));
     			*cid = tmp.id;
     			g_hash_table_insert(invalid_containers, cid, NULL);
-                NOTICE("CMA: container %lld can be reclaimed.", cid);
+                VERBOSE("CMA: container %lld can be reclaimed.", cid);
     		}else{
     			/* This record remains valid. */
     			rec->id = tmp.id;
@@ -108,12 +108,12 @@ GHashTable* trunc_manifest(int jobid){
     		}
     	}
 
-        NOTICE("CMA: %d of records are valid.", g_hash_table_size(manifest));
-        NOTICE("CMA: %d of records are going to be reclaimed.", g_hash_table_size(invalid_containers));
+        VERBOSE("CMA: %d of records are valid.", g_hash_table_size(manifest));
+        VERBOSE("CMA: %d of records are going to be reclaimed.", g_hash_table_size(invalid_containers));
 
         fclose(fp);
     }else{
-    	NOTICE("manifest doesn't exist!");
+    	VERBOSE("manifest doesn't exist!");
     	exit(1);
     }
 

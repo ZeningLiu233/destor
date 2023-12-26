@@ -54,6 +54,14 @@ uint64_t g_condition_mask[] = {
 
 void fastcdc_init(uint32_t expectCS)
 {
+    MD5_HASH_CTX_MGR *mgr;
+    int ret = posix_memalign((void *)&mgr, 16, sizeof(MD5_HASH_CTX_MGR));
+    if ((ret != 0) || (mgr == NULL))
+    {
+        printf("posix_memalign failed test aborted\n");
+        return;
+    }
+    md5_ctx_mgr_init(mgr);
     char seed[SeedLength];
     for (int i = 0; i < SymbolCount; i++)
     {
@@ -61,28 +69,11 @@ void fastcdc_init(uint32_t expectCS)
         {
             seed[j] = i;
         }
-
         g_gear_matrix[i] = 0;
-
-        MD5_HASH_CTX_MGR *mgr;
-        int ret;
-
-        ret = posix_memalign((void *)&mgr, 16, sizeof(MD5_HASH_CTX_MGR));
-        if ((ret != 0) || (mgr == NULL))
-        {
-            printf("posix_memalign failed test aborted\n");
-            return;
-        }
-
-        MD5_HASH_CTX ctxpool, *ctx = NULL;
-
+        MD5_HASH_CTX ctxpool;
         hash_ctx_init(&ctxpool);
-        ctxpool.user_data = (void *)&seed;
-
-        ctx = &ctxpool;
-        ctx = md5_ctx_mgr_submit(mgr, ctx, seed, SeedLength, HASH_ENTIRE);
-        ctx = md5_ctx_mgr_flush(mgr);
-
+        md5_ctx_mgr_submit(mgr, &ctxpool, seed, SeedLength, HASH_ENTIRE);
+        md5_ctx_mgr_flush(mgr);
         memcpy(&g_gear_matrix[i], ctxpool.job.result_digest, sizeof(uint64_t));
     }
 
