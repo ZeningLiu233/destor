@@ -14,4 +14,4 @@ target_compile_options(destor PRIVATE -O3)
 
 target_include_directories(destor PRIVATE ${GLIB_INCLUDE_DIRS} "include/")
 
-target_link_libraries(destor pthread ${GLIB_LIBRARIES} isal_crypto)
+target_link_libraries(destor pthread ${GLIB_LIBRARIES} isal_crypto m)

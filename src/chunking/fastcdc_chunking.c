@@ -1,12 +1,13 @@
 //
 // Created by borelset on 2019/3/20.
 //
-
+#include "destor.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "isa-l_crypto/md5_mb.h"
 
@@ -52,6 +53,9 @@ uint64_t g_condition_mask[] = {
     0x0000d90703537000  // 128KB
 };
 
+uint64_t using_mask0;
+uint64_t using_mask1;
+
 void fastcdc_init(uint32_t expectCS)
 {
     MD5_HASH_CTX_MGR *mgr;
@@ -77,16 +81,34 @@ void fastcdc_init(uint32_t expectCS)
         memcpy(&g_gear_matrix[i], ctxpool.job.result_digest, sizeof(uint64_t));
     }
 
-    g_min_fastcdc_chunk_size = 2048;
-    g_max_fastcdc_chunk_size = 65536;
-    g_expect_fastcdc_chunk_size = expectCS;
+    g_min_fastcdc_chunk_size = destor.chunk_min_size;
+    g_max_fastcdc_chunk_size = destor.chunk_max_size;
+    g_expect_fastcdc_chunk_size = destor.chunk_avg_size;
+    
+    int bit = round(log2(g_expect_fastcdc_chunk_size)) - 6;  // 2^6 = 64
+    assert(bit >= 0);
+
+    // normalized level is set to 2
+    int normalized_level = 2;
+    int mask0_b = bit + normalized_level;      // stricter mask
+    int mask1_b = bit - normalized_level;
+    const int mask_b = sizeof(g_condition_mask) / sizeof(uint64_t);
+    if (mask0_b > mask_b - 1) {
+        mask0_b = mask_b - 1;
+    }
+    if (mask1_b < 0) {
+        mask1_b = 0;
+    }
+
+    using_mask0 = g_condition_mask[mask0_b];
+    using_mask1 = g_condition_mask[mask1_b];
 }
 
 int fastcdc_chunk_data(unsigned char *p, int n)
 {
 
     uint64_t fingerprint = 0, digest;
-    int i = g_min_fastcdc_chunk_size, Mid = g_min_fastcdc_chunk_size + 8 * 1024;
+    int i = g_min_fastcdc_chunk_size, Mid = g_expect_fastcdc_chunk_size;
     // return n;
 
     if (n <= g_min_fastcdc_chunk_size) // the minimal  subChunk Size.
@@ -99,7 +121,7 @@ int fastcdc_chunk_data(unsigned char *p, int n)
     while (i < Mid)
     {
         fingerprint = (fingerprint << 1) + (g_gear_matrix[p[i]]);
-        if ((!(fingerprint & 0x0000d90f03530000)))
+        if ((!(fingerprint & using_mask0)))
         { // AVERAGE*2, *4, *8
             return i;
         }
@@ -108,7 +130,7 @@ int fastcdc_chunk_data(unsigned char *p, int n)
     while (i < n)
     {
         fingerprint = (fingerprint << 1) + (g_gear_matrix[p[i]]);
-        if ((!(fingerprint & 0x0000d90003530000)))
+        if ((!(fingerprint & using_mask1)))
         { // Average/2, /4, /8
             return i;
         }
